@@ -5,7 +5,7 @@ There are three main folders:
 2) The Test folder contains the various tests, validating the implementation
 3) The Documentation folder contains the latex source code and a PDF file, representing the documentation for the project
 
-Collaborators:
-Monti Francesco
-Nappi Fabio
+Collaborators:<br>
+Monti Francesco <br>
+Nappi Fabio <br>
 Piovani Davide
