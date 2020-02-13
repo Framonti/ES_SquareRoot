@@ -14,14 +14,20 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-module SquareRootModule(s_i, doSqrt_i, clk_i, valid_o, sqrt_o);
+module SquareRootModule(clk, rst, doSqrt_i, s_i, valid_o, res_o);
 
-    input   s_i;        // Value we want to compute the sqrt of
-    input   doSqrt_i;   // Input command that impones the start of computation
-    input   clk_i;      // Clock signal
-    output  valid_o;    // Signals that the output is valid
-    output  sqrt_o;     // Final computed value  
+    import lampFPU_pkg::*;
+    
+    input   clk;                                // Clock signal
+    input   rst;                                // Reset signal   
+    input   doSqrt_i;                           // Input command that signals the start of computation
+    input   [(1+LAMP_FLOAT_F_DW)-1:0]	s_i;    // Significant of the value we want the sqrt of (8 bits)
+         
+    output  logic valid_o;                              // Signals that the output is valid
+    output  logic [2*(1+LAMP_FLOAT_F_DW)-1:0] res_o;    // Final computed value  (16 bits)
 
+    
+    
     localparam logic [1:0]  IDLE        = 2'b00,
                             SQRT        = 2'b01,
                             OUTSTATE    = 2'b10;
