@@ -107,8 +107,8 @@ always_comb
 				if (doSqrt_i)
 				begin
 					ss_next		=	SQRT_B;
-					b_next		=	s_i;// << (1+LAMP_FLOAT_F_DW);  //8 bits shift????
-					y_next		=	(3 - s_i) >> 1;
+					b_next		=	s_i << (1+LAMP_FLOAT_F_DW);  //8 bits shift????
+					y_next		=	(9'b110000000 - {1'b0, s_i}) >> 1;
 					r_next		=	y_next;
 					x_next		=	s_i * r_next;
 					i_next		=	'0;
