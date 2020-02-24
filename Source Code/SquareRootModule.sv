@@ -11,17 +11,21 @@
 // Revision 0.01 - Interface
 // Revision 0.02 - 
 // Additional Comments:
-// CHECK FIRST BIT OF s_i IS A 0!!
+// 
+
+
+// Se l'esponente � dispari bisogna passare la mantissa moltiplicata per due
 //////////////////////////////////////////////////////////////////////////////////
 
-module SquareRootModule(clk, rst, doSqrt_i, s_i, valid_o, res_o);
+module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, valid_o, res_o);
 
     import lampFPU_pkg::*;
     
     input   clk;                                // Clock signal
     input   rst;                                // Reset signal   
     input   doSqrt_i;                           // Input command that signals the start of computation
-    input   signed [(1+LAMP_FLOAT_F_DW)-1:0]	s_i;    // Significant of the value we want the sqrt of (8 bits)
+    input   [(1+LAMP_FLOAT_F_DW)-1:0]	s_i;    // Significant of the value we want the sqrt of (8 bits)
+    input   is_exp_odd_i;
          
     output  logic valid_o;                              // Signals that the output is valid
     output  logic [2*(1+LAMP_FLOAT_F_DW)-1:0] res_o;    // Final computed value  (16 bits)
@@ -31,16 +35,17 @@ module SquareRootModule(clk, rst, doSqrt_i, s_i, valid_o, res_o);
 //						internal wires							//
 //////////////////////////////////////////////////////////////////
 
-    logic	signed [2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	b_tmp;             //32 bits
-	logic	signed [(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	    y_tmp;             //16 bits
-	logic	signed [2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	x_tmp;             //32 bits
-	logic	signed [(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	    r_tmp;             //16 bits
+    logic  [2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	b_tmp;             //32 bits
+	logic  [(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	    y_tmp;             //16 bits
+	logic  [2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	x_tmp;             //32 bits
+	logic  [(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	    r_tmp;             //16 bits
 	
-	logic	signed [(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0]  b_r, b_next;       //16 bits
-	logic	signed [(1+LAMP_FLOAT_F_DW)-1:0]		       y_r, y_next;       //8 bits
-	logic	signed [(1+LAMP_FLOAT_F_DW)-1:0]		       r_r, r_next;       //8 bits  
-	logic	signed [(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0]  x_r, x_next;       //16 bits
-	logic	[$clog2(LAMP_APPROX_MULS)-1:0]				   i_r, i_next;       //2 bits
+	logic  [(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0]       b_r, b_next;       //16 bits
+	logic  [(1+LAMP_FLOAT_F_DW)-1:0]		            y_r, y_next;       //8 bits
+	logic  [(1+LAMP_FLOAT_F_DW)-1:0]		            r_r, r_next;       //8 bits  
+	logic  [(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0]       x_r, x_next;       //16 bits
+	//logic	[$clog2(LAMP_APPROX_MULS)-1:0]				i_r, i_next;       //2 bits
+	logic	[3:0]				   i_r, i_next;       //2 bits
 	
 	
 	logic	[2*(1+LAMP_FLOAT_F_DW)-1:0]					res_next;          //16 bits
@@ -88,8 +93,9 @@ always_comb
 	begin
 		ss_next		=	ss;
 		
-		b_tmp       =   b_r * (y_r ** 2);
-		r_tmp       =   (3 - b_r) >> 1;
+		b_tmp       =   b_r * (r_r ** 2);
+		//r_tmp       =   (3 - b_r) >> 1;
+		r_tmp 		= 	(17'b11000000000000000 - {1'b0, b_r}) >> 1;
 		x_tmp       =   x_r * r_tmp;        //16 * 16 bits (maybe r_r?)
 		y_tmp       =   y_r * r_r;
 		
@@ -107,17 +113,17 @@ always_comb
 				if (doSqrt_i)
 				begin
 					ss_next		=	SQRT_B;
-					b_next		=	s_i << (1+LAMP_FLOAT_F_DW);  //8 bits shift????
+					b_next		=	{is_exp_odd_i, s_i} << (LAMP_FLOAT_F_DW);  //7 bits shift????
 					y_next		=	(9'b110000000 - {1'b0, s_i}) >> 1;
 					r_next		=	y_next;
-					x_next		=	s_i * r_next;
+					x_next		=	(s_i * r_next) << 1;
 					i_next		=	'0;
 				end
 			end
 			
 			SQRT_B:
 			begin
-			    if (i_r == LAMP_APPROX_MULS - 1)
+			    if (i_r == 4'b1111)
 			    begin
 			         ss_next = IDLE;
                      res_next = x_r;
@@ -125,7 +131,7 @@ always_comb
 			    end
 			    else
 			    begin
-                     b_next = b_tmp[(2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-2)-:(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)];
+                     b_next = b_tmp[(2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-4)-:(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)];
                      // b_next = b_tmp[(31-FUNC_i2f_integerExponent(b_tmp))-:(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)];  roba di nappo
                      ss_next = SQRT_R;
 			    end
@@ -133,7 +139,7 @@ always_comb
 			
 			SQRT_R:
             begin
-                r_next = r_tmp[(2*(1+LAMP_FLOAT_F_DW)-2)-:(1+LAMP_FLOAT_F_DW)];
+                r_next = r_tmp[(2*(1+LAMP_FLOAT_F_DW)-1)-:(1+LAMP_FLOAT_F_DW)];
                 ss_next = SQRT_XY;
             end
             
