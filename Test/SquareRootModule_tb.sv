@@ -10,7 +10,7 @@ module SquareRootModule_tb;
 	logic 								doSqrt_i_tb;
 
 	logic								valid_o_tb;
-	logic [2*(1+LAMP_FLOAT_F_DW)-1:0] 	res_o_tb;
+	logic [(1+LAMP_FLOAT_F_DW)-1:0] 	res_o_tb;
 
 	always #5 clk_tb = ~clk_tb;
 
@@ -20,15 +20,16 @@ module SquareRootModule_tb;
 		rst_tb 		= 1;
 		doSqrt_i_tb = 0;
 		s_i_tb 		= '0;
-		is_exp_odd_tb = 0;
+		is_exp_odd_tb = 1;
 		//$display("LAMP: %d", LAMP_APPROX_MULS);
 		//$display("clog: %b", $clog2(LAMP_APPROX_MULS)-1);
 
 		@(posedge clk_tb);
+		@(posedge clk_tb);
 		rst_tb <= 0;
 
 		@(posedge clk_tb);
-		s_i_tb 		<= 8'b11001000;
+		s_i_tb 		<= 8'b11011000;
 		doSqrt_i_tb <= 1'b1;
 
 		while (valid_o_tb == 0) @(posedge clk_tb);
