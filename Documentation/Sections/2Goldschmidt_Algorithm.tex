@@ -1,6 +1,6 @@
-The Square Root operation is quite complicated from a computational point of view; in fact, the most efficient known algorithms require to compute this operation by using an iterative approach, involving a chain of multiplications and other operations. The two most famous algorithms are the Newton-Raphson iterations are Goldschmidt’s algorithm. The latter has been chosen for bfloat16, since it's suitable for an efficient hardware implementation. 
+The Square Root is quite complicated from a computational point of view; in fact, the most efficient known algorithms require to compute this operation by using an iterative approach, involving a chain of multiplications and other operations. The two most famous algorithms are the Newton-Raphson iterations are Goldschmidt’s algorithm. The latter has been chosen for bfloat16, since it's suitable for an efficient hardware implementation. 
 \\
-Given a Significand $S$, Goldschmidt's algorithm can be used to compute $\sqrt{S}$. With just some small variations, it's also quite easy to compute $\frac{1}{\sqrt{S}}$.\\
+Given a Significand $S$, Goldschmidt's algorithm can be used to compute $\sqrt{S}$. Withonly one small variations, it's also possible to compute $\frac{1}{\sqrt{S}}$.\\
 The objective is to find a series of $R_0$, $R_1$, ... , $R_n$ such that the following product tends to 1:
 $$B_n = S*R_0^{2}*R_1^{2}* ... * R_{n-1}^{2} \approx 1 $$
 Then, we can approximate the Square Root as:
@@ -19,7 +19,7 @@ Goldschmidt's algorithm initializes its variables as follow:
 Each Goldschmidt's iteration firstly consist of computing:
 
 \begin{enumerate}
-\item $B_i$ = $B_{i-1}$ * $Y_{i-1}^{2}$
+\item $B_i$ = $B_{i-1}$ * $R_{i-1}^{2}$
 \item $R_i$ = $\frac{3-B_i}{2}$
 \end{enumerate}
 
@@ -29,6 +29,35 @@ And secondly it updates the Square Root and the Reciprocal Square Root approxima
 \item $Y_i$ = $Y_{i-1}$ * $R_i$
 \end{enumerate}
 
-Iterations stops when we reach M bits of precision; this can be achieved with a fixed amount of iterations that depends on M (in our case, 8 bits).
+Iterations stops when R reaches a good approximation of 1 or when $X_i$ reaches M bits of precision; the latter condition can be achieved with a fixed amount of iterations that depends on M (in our case, 8 bits).\\
+
+We wanted to show that the Goldschmidt algorithm is very efficient, as it requires only a very small number of iterations to reach the desired precision. To do so, we quickly implemented the algorithm in Matlab and tracked the values of $B_i$, $R_i$, $Y_i$ and $X_i$ for ten iterations.\\ The code (\ref{fig:Matlab_Algorithm}) is simply the software implementation of the algorithm, and we run it twice; the first time, we put $S$ = 1,5625, which yelds an exact Square Root (\ref{fig:S_15625}).
+ The second time, we used $S$ = 1,5, which instead yelds an irrational number as solution (\ref{fig:S_15}).\\
+In both cases, the algorithm converges in 5 or 6 iterations. Given that we only use 8 bits for the Mantissa, and not 24 like Matlab, we'll reach the desired precision in even fewer iterations.
+
+\begin{figure}[h]
+	\centering
+	\captionsetup{justification=centering}
+	\includegraphics[scale=0.5]{Matlab_Algorithm.jpg}	
+	\caption{Goldschmidt's algorithm implemented in Matlab}
+	\label {fig:Matlab_Algorithm}
+\end{figure}
+
+\begin{figure}[h]
+	\centering
+	\captionsetup{justification=centering}
+	\includegraphics[scale=0.7]{S_15625.jpg}	
+	\caption{Results with S = 1,5625\\From left to right, the values of B, R, Y, X}
+	\label {fig:S_15625}
+\end{figure}
+
+
+\begin{figure}[h]
+	\centering
+	\captionsetup{justification=centering}
+	\includegraphics[scale=0.7]{S_15.jpg}	
+	\caption{Results with S = 1,5\\From left to right, the values of B, R, Y, X}
+	\label {fig:S_15}
+\end{figure}
 
 \clearpage
