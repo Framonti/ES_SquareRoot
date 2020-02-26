@@ -23,9 +23,10 @@ module lampFPU_sqrt(
        signum_op_i,
        extExp_op_i,
        extMant_op_i,
-       //isInf_op_i,
-       //isZero_op_i,
-       //isSignumNAN_i,  
+       isInf_op_i,
+       isZero_op_i,
+       isSNAN_op_i,
+       isQNAN_op_i,
  
          
        //outputs
@@ -45,18 +46,18 @@ module lampFPU_sqrt(
     
     input                              doSqrt_i;
     input   [LAMP_FLOAT_S_DW-1:0]	   signum_op_i;     // The operand signum (1 bit)
-    //input   [(LAMP_FLOAT_E_DW+1)-1:0]  extExp_op_i;     // The extended exponent (9 bits)  ???
     input   [(LAMP_FLOAT_E_DW)-1:0]    extExp_op_i;     
     input   [(1+LAMP_FLOAT_F_DW)-1:0]  extMant_op_i;    // The extended mantissa (8 bits)
-    //input   isInf_op_i;                             
-    //input   isZero_op_i;
+    input   isInf_op_i;                             
+    input   isZero_op_i;
+    input   isQNAN_op_i;
+    input   isSNAN_op_i;
     //input isNegative_op_i ???
     
     output logic                            valid_o;
     output logic                            s_res_o;           // it will always be 0 by sqrt definition
-    output logic [LAMP_FLOAT_E_DW-1:0]	    e_res_o;           // result exponent (8 bits)
-    //output logic [LAMP_FLOAT_F_DW+5-1:0]    f_res_o;           // result mantissa (12 bits) ???
-    output logic [LAMP_FLOAT_E_DW-1:0]      f_res_o;
+    output logic [LAMP_FLOAT_E_DW-1:0]	    e_res_o;           // resulting exponent (8 bits)
+    output logic [LAMP_FLOAT_F_DW-1:0]      f_res_o;           // resulting significand (7 bits) maybe 12 bits?
     
     //output logic isOverflow_o;
     //output logic isUnderflow_o;
@@ -70,13 +71,21 @@ module lampFPU_sqrt(
    
    //Next values
    logic                            valid_next;
+   logic                            s_res_next;
    logic [LAMP_FLOAT_E_DW-1:0]      e_res_next;
    //logic [LAMP_FLOAT_F_DW+5-1:0]    f_res_next;
-   logic [LAMP_FLOAT_E_DW-1:0]      f_res_next;
+   logic [LAMP_FLOAT_F_DW-1:0]      f_res_next;
+   logic							isCheckNanInfValid;
+   logic                            isZeroRes;
+   logic                            isCheckInfRes;
+   logic                            isCheckNanRes;
+   logic                            isCheckSignRes;
+   logic                            signum_op_r;
+
   
    logic                            srm_doSqrt;
    logic                            srm_is_exp_odd;
-   logic [(1+LAMP_FLOAT_F_DW)-1:0]  srm_s;           
+   logic [(1+LAMP_FLOAT_F_DW)-1:0]  srm_s;
    logic [LAMP_FLOAT_E_DW-1:0]      srm_res;
    logic                            srm_valid;
        
@@ -107,7 +116,7 @@ module lampFPU_sqrt(
         if (rst)
         begin
             //Internal registers
-        
+            
             //Output registers
             valid_o             <= 0;
             s_res_o             <= 0;
