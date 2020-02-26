@@ -2,7 +2,6 @@ In order to represent real numbers in computer memory, a common approach is to u
 The value F given by the floating point format, of any kind, can be expressed as:
 
 $$F = (-1)^{S}*M*2^{E} $$
-\\
 
 Where 
 \begin{itemize}
@@ -11,7 +10,7 @@ Where
 	\item M is the Mantissa (also called Significand)
 \end{itemize}
 
-Floating-point formats and arithmetic operations are specified by the IEEE 754 standard. \\
+Floating-point formats and arithmetic operations are specified by the IEEE 754 standard (\url{https://standards.ieee.org/standard/754-2019.html}. \\
 Under this standard (n is the number of bits reserved to the exponent):
 \begin{itemize}
 	\item The exponent E is unsigned, with values between 0 and ($2^{n} -1$)
@@ -21,9 +20,9 @@ Under this standard (n is the number of bits reserved to the exponent):
 \end{itemize}
 
 The single and double precision floating point representations are the two most used in modern computers and mobile phones. These devices usually aren’t particularly constrained by memory space and may actually need the accuracy offered by a 32-bit or even 64-bit representation.\\
-On the other hand, many Embedded Systems are memory and power constrained, and don’t need that much accuracy in order to perform their tasks. So, they may implement the half-precision floating-point format, also called binary16. \\
-This standard requires 1 bit for the sign, 5 bits for the exponent and 10 bits for the mantissa. \\
-However, another standard has been recently developed, the bfloat16 (Brain Floating Point) floating-point format. This standard requires 1 bit for the sign, 8 bits for the exponent and 7 for the mantissa. \\
+On the other hand, in many programs and situations we don’t need that much accuracy in order to perform their tasks. So, we may use the half-precision floating-point format, also called binary16. For example, Embdedded Systems are tipically memory and power constrained and usually don't need so much precision in order to perform their tasks. \\
+The binary16 standard requires 1 bit for the sign, 5 bits for the exponent and 10 bits for the mantissa. This means that we can only represent number between $2^{-14}$ and $2^{15}$.\\
+This small range of possible numbers can be a strong limitation. Therefore, another standard has been recently developed by Google, the bfloat16 (Brain Floating Point) floating-point format. This standard requires 1 bit for the sign, 8 bits for the exponent and 7 for the mantissa. \\
 This format is a truncated version of the binary32 with the intent of accelerating machine learning and near-sensor computing. It preserves the approximate dynamic range of 32-bit floating-point numbers by retaining 8 exponent bits, but supports only an 8-bit precision rather than the 24-bit significand of the binary32 format. 
 
 \begin{figure}[h]
@@ -39,7 +38,7 @@ However, it still misses some other important operations, such as the fused Mult
 More formally, the goals of our project are:
 \begin{itemize}
 	\item Add support for Square Root operation
-	\item Verify the implementation correctness, comparing the results produced by our design with the ones obtained from the 		C function sqrt
+	\item Verify the implementation correctness, comparing the results produced by our design with the ones obtained from the C function sqrt
 	\item Add support for the INVSQRT operation
 \end{itemize}
 
