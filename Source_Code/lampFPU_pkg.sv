@@ -495,6 +495,50 @@ package lampFPU_pkg;
 		end
 		return {isValidRes, isZeroRes, isInfRes, isNanRes, signRes};
 	endfunction
+	
+	
+      /*
+       *  sqrt(NaN) -> NaN
+       *  sqrt(+/- 0) -> +/- 0
+       *  sqrt(+ inf) -> + inf
+       *  sqrt(- inf) -> NaN 
+       *  sqrt(-X)    -> Nan               sqrt of negative number
+       */
+       
+   function automatic logic[4:0] FUNC_calcInfNanResSqrt(
+       input isZero_op_i,
+       input isInf_op_i, 
+       input sign_op_i,    // 1 = negative, 0 = positive
+       input isSNan_op_i, 
+       input isQNan_op_i
+       );
+       
+       logic isOp_Nan = isSNan_op_i || isQNan_op_i;
+       logic isValidRes, isZeroRes, isInfRes, isNanRes, signRes;          // Flags returned by the function
+       
+       isValidRes = (isZero_op_i || isInf_op_i || isOp_Nan || sign_op_i) ? 1 : 0; // We're interested in this function results only in these conditions
+       signRes = sign_op_i;
+       
+       if(isZero_op_i) // both +/- 0
+       begin
+            isZeroRes = 1; isInfRes = 0; isNanRes = 0;
+       end            
+       else if(sign_op_i) // both sqrt(- inf) and sqrt(-X) 
+       begin
+           isZeroRes = 0; isInfRes = 0; isNanRes = 1;
+       end               
+       else if(isOp_Nan)
+       begin
+            isZeroRes = 0; isInfRes = 0; isNanRes = 1;
+       end              
+       else  // sqrt(+inf)
+       begin
+            isZeroRes = 0; isInfRes = 1; isNanRes = 0;
+       end    
+                   
+       return {isValidRes, isZeroRes, isInfRes, isNanRes, signRes}; 
+    endfunction
+
 
 	function automatic logic[LAMP_APPROX_DW-1:0] FUNC_approxRecip(
 		input [(1+LAMP_FLOAT_F_DW)-1:0] f_i
