@@ -12,9 +12,6 @@
 // Revision 0.02 - 
 // Additional Comments:
 // 
-
-
-// Se l'esponente è dispari bisogna passare la mantissa moltiplicata per due
 //////////////////////////////////////////////////////////////////////////////////
 
 module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, special_case_i, valid_o, res_o);
@@ -58,8 +55,6 @@ module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, special_case_i, v
                             
     logic [1:0]	ss, ss_next;
     
-    localparam logic [15:0] sqrt2 = 16'b1011010100000101;
-    
     always_ff @(posedge clk)
         begin
             if (rst)
@@ -95,7 +90,7 @@ module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, special_case_i, v
 		ss_next		=	ss;
 		
 		b_tmp       =   b_r * (r_r ** 2);
-		r_tmp 		= 	(17'b11000000000000000 - {1'b0, b_r}) >> 1;
+		r_tmp 		= 	(THREE_17 - {1'b0, b_r}) >> 1;
 		x_tmp       =   (x_r * r_r) << (1+LAMP_FLOAT_F_DW);        //16 * 16 bits (maybe r_r?)
 		y_tmp       =   y_r * r_r;
 		//y_tmp       =   (y_r * r_r) >> 8;
@@ -119,7 +114,7 @@ module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, special_case_i, v
 				begin
 					ss_next            =   SQRT_B;
 					b_next             =   s_i << (1+LAMP_FLOAT_F_DW);                     //8 bits shift
-				    y_next             =   (9'b110000000 - {1'b0, s_i}) >> 1;
+				    y_next             =   (THREE_9 - {1'b0, s_i}) >> 1;
 					r_next		       =   y_next;
 					x_next		       =   ((s_i * r_next) << 1);   //first bit is always a 0 so we can remove it
 					is_exp_odd_next    =   is_exp_odd_i;
@@ -128,12 +123,12 @@ module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, special_case_i, v
 			
 			SQRT_B:
 			begin
-			    if (r_r == 8'b10000000)
+			    if (r_r == APPROX_ONE)
 			    begin
 			         ss_next = IDLE;
 			         if (is_exp_odd_r)
 			         begin
-                         x_tmp = (x_r * sqrt2);
+                         x_tmp = (x_r * SQRT2);
                          res_next = x_tmp[(2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-2)-:(1+LAMP_FLOAT_F_DW)] + 2 * (x_r[7] | x_r[6]);
                      end
                      else

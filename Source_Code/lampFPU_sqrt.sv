@@ -28,15 +28,11 @@ module lampFPU_sqrt(
        isSNAN_op_i,
        isQNAN_op_i,
  
-         
        //outputs
        s_res_o, 
        e_res_o, 
        f_res_o, 
        valid_o
-       //isOverflow_o,
-       //isUnderflow_o
-      // isToRound_o
   );
     
     import lampFPU_pkg::*;
@@ -52,16 +48,11 @@ module lampFPU_sqrt(
     input                              isZero_op_i;
     input                              isQNAN_op_i;
     input                              isSNAN_op_i;
-    //input isNegative_op_i ???
     
     output logic                            valid_o;
-    output logic                            s_res_o;           // it will always be 0 by sqrt definition
+    output logic                            s_res_o;           // resulting sign (1 bit)
     output logic [LAMP_FLOAT_E_DW-1:0]	    e_res_o;           // resulting exponent (8 bits)
-    output logic [LAMP_FLOAT_F_DW-1:0]      f_res_o;           // resulting significand (7 bits) maybe 12 bits?
-    
-    //output logic isOverflow_o;
-    //output logic isUnderflow_o;
-   // output logic isToRound_o;
+    output logic [LAMP_FLOAT_F_DW-1:0]      f_res_o;           // resulting significand (7 bits)
    
    
    //////////////////////////////////////////////////////////////////
@@ -73,7 +64,6 @@ module lampFPU_sqrt(
    logic                            valid_next;
    logic                            s_res_next;
    logic [LAMP_FLOAT_E_DW-1:0]      e_res_next;
-   //logic [LAMP_FLOAT_F_DW+5-1:0]    f_res_next;
    logic [LAMP_FLOAT_F_DW-1:0]      f_res_next;
    logic							isCheckNanInfValid;
    logic                            isZeroRes;
@@ -81,10 +71,8 @@ module lampFPU_sqrt(
    logic                            isCheckNanRes;
    logic                            isCheckSignRes;
    logic [LAMP_FLOAT_S_DW-1:0]      signum_op_r;
-   
    logic                            isZero_op_r, isInf_op_r, isSNAN_op_r, isQNAN_op_r;
 
-  
    logic                            srm_doSqrt;
    logic                            srm_is_exp_odd;
    logic [(1+LAMP_FLOAT_F_DW)-1:0]  srm_s;
@@ -162,51 +150,32 @@ module lampFPU_sqrt(
                 );
         
         unique if (isZeroRes)
-            {s_res_next, e_res_next, f_res_next}    = {isCheckSignRes, ZERO_E_F[15:8], ZERO_E_F[7:0]};
+        begin
+            {s_res_next, e_res_next, f_res_next}    = {isCheckSignRes, ZERO_E_F[14:7], ZERO_E_F[6:0]};
+        end
         else if (isCheckInfRes)
-            {s_res_next, e_res_next, f_res_next}    = {isCheckSignRes, INF_E_F[15:8], INF_E_F[7:0]};
+        begin
+            {s_res_next, e_res_next, f_res_next}    = {isCheckSignRes, INF_E_F[14:7], INF_E_F[6:0]};
+        end
         else if (isCheckNanRes)
-            {s_res_next, e_res_next, f_res_next}    = {isCheckSignRes, QNAN_E_F[15:8], QNAN_E_F[7:0]};
+        begin
+            {s_res_next, e_res_next, f_res_next}    = {isCheckSignRes, QNAN_E_F[14:7], QNAN_E_F[6:0]};
+        end
         else
-        begin       
+        begin
             if (extExp_op_i >= LAMP_FLOAT_E_BIAS)     //exp >= 127
+            begin
                 e_res_next      = LAMP_FLOAT_E_BIAS + (extExp_op_i - LAMP_FLOAT_E_BIAS >> 1) ;       //Es: exp = 133 (2^6) --> 127 + ((133 - 127) / 2) --> 127 + (6/2) --> 130 (2^3)
+            end
             else
+            begin
                 e_res_next      = LAMP_FLOAT_E_BIAS - (LAMP_FLOAT_E_BIAS - extExp_op_i >> 1);        //Es: exp = 121 (2^-6) --> 127 - ((127 - 121) / 2) --> 127 - (6/2) --> 124 (2^-3)
+            end
             s_res_next          = 0;
             f_res_next          = srm_res;
         end
         
         valid_next  = srm_valid;
     end
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
 endmodule

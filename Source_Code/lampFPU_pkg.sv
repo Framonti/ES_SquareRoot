@@ -48,6 +48,12 @@ package lampFPU_pkg;
 	parameter LAMP_APPROX_DW	=	4;
 	parameter LAMP_PREC_DW		=	8;
 	parameter LAMP_APPROX_MULS	=	$clog2 ((LAMP_FLOAT_DW+1)/LAMP_APPROX_DW);
+	
+	// sqrt-only
+	parameter SQRT2        = 16'b1011010100000101;
+	parameter THREE_17     = 17'b11000000000000000;
+	parameter THREE_9      = 9'b110000000;
+	parameter APPROX_ONE   = 8'b10000000;
 
 	typedef enum logic
 	{
