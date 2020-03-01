@@ -51,6 +51,7 @@ package lampFPU_pkg;
 	
 	// sqrt-only
 	parameter SQRT2        = 16'b1011010100000101;
+	parameter INV_SQRT2    = 16'b0101101010000010;
 	parameter THREE_17     = 17'b11000000000000000;
 	parameter THREE_9      = 9'b110000000;
 	parameter APPROX_ONE   = 8'b10000000;
@@ -516,39 +517,60 @@ package lampFPU_pkg;
         input isInf_op_i, 
         input sign_op_i,    // 1 = negative, 0 = positive
         input isSNan_op_i, 
-        input isQNan_op_i
-        );
+        input isQNan_op_i,
+        input invSqrt_op_i
+    );
        
         logic isOp_Nan = isSNan_op_i || isQNan_op_i;
         logic isValidRes, isZeroRes, isInfRes, isNanRes, signRes;          // Flags returned by the function
        
-        isValidRes = (isZero_op_i || isInf_op_i || isOp_Nan || sign_op_i) ? 1 : 0; // We're interested in this function results only in these conditions
+        isValidRes = (isZero_op_i || isInf_op_i || isOp_Nan || sign_op_i); // We're interested in this function results only in these conditions
         signRes = sign_op_i;
+        
+        isZeroRes = 0; isInfRes = 0; isNanRes = 0;
        
-        if(isZero_op_i) // both +/- 0
+        if (invSqrt_op_i)
         begin
-            isZeroRes = 1; isInfRes = 0; isNanRes = 0;
-        end            
-        else if(sign_op_i) // both sqrt(- inf) and sqrt(-X) 
-        begin
-           isZeroRes = 0; isInfRes = 0; isNanRes = 1;
-        end               
-        else if(isOp_Nan)
-        begin
-            isZeroRes = 0; isInfRes = 0; isNanRes = 1;
-        end              
-        else if(isInf_op_i) // sqrt(+inf)
-        begin
-            isZeroRes = 0; isInfRes = 1; isNanRes = 0;
+            if(isZero_op_i || sign_op_i || isOp_Nan) // both +/- 0, both sqrt(- inf) and sqrt(-X), Nan
+                isNanRes = 1;
+            else if(isInf_op_i) // sqrt(+inf)
+                isZeroRes = 1;
         end
         else
         begin
-            isZeroRes = 0; isInfRes = 0; isNanRes = 0;
+            if(isZero_op_i) // both +/- 0
+                isZeroRes = 1;
+            else if(sign_op_i || isOp_Nan) // both sqrt(- inf) and sqrt(-X), Nan
+               isNanRes = 1;
+            else if(isInf_op_i) // sqrt(+inf)
+                isInfRes = 1;
         end
+        
                    
        return {isValidRes, isZeroRes, isInfRes, isNanRes, signRes}; 
     endfunction
 
+    function automatic logic[(LAMP_FLOAT_E_DW)-1:0] FUNC_calcExpSquareRoot(
+        input [(LAMP_FLOAT_E_DW)-1:0]   exp,
+        input                           invSqrt
+    );
+        if (invSqrt)
+        begin
+            if (exp >= LAMP_FLOAT_E_BIAS)     //exp >= 127
+                return LAMP_FLOAT_E_BIAS - (exp - LAMP_FLOAT_E_BIAS >> 1) - 1;    //Es: exp = 133 (2^6) --> 127 - ((133 - 127) / 2) - 1 --> 127 - (6/2) - 1 --> 123 (2^-4)
+            else
+                return LAMP_FLOAT_E_BIAS + (LAMP_FLOAT_E_BIAS - exp - 1 >> 1);    //Es: exp = 121 (2^-6) --> 127 + ((127 - 121 - 1) / 2) --> 127 + (7/2) --> 130 (2^3)
+        end
+        else
+        begin
+            if (exp >= LAMP_FLOAT_E_BIAS)     //exp >= 127
+                return LAMP_FLOAT_E_BIAS + (exp - LAMP_FLOAT_E_BIAS >> 1) ;       //Es: exp = 133 (2^6) --> 127 + ((133 - 127) / 2) --> 127 + (6/2) --> 130 (2^3)
+            else
+                return LAMP_FLOAT_E_BIAS - (LAMP_FLOAT_E_BIAS - exp >> 1);        //Es: exp = 121 (2^-6) --> 127 - ((127 - 121) / 2) --> 127 - (6/2) --> 124 (2^-3)
+        end
+        
+        
+    endfunction
 
 	function automatic logic[LAMP_APPROX_DW-1:0] FUNC_approxRecip(
 		input [(1+LAMP_FLOAT_F_DW)-1:0] f_i

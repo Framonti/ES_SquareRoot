@@ -6,6 +6,7 @@ module lampFPU_sqrt_tb;
 	logic                              clk_tb;
 	logic                              rst_tb;
 	logic                              doSqrt_i_tb;
+	logic                              invSqrt_i_tb;
 	logic [LAMP_FLOAT_S_DW-1:0]        signum_op_i_tb;
 	logic [(LAMP_FLOAT_E_DW)-1:0]      extExp_op_i_tb;
 	logic [(1+LAMP_FLOAT_F_DW)-1:0]    extMant_op_i_tb;
@@ -26,12 +27,13 @@ module lampFPU_sqrt_tb;
 		clk_tb            <= 1;
 		rst_tb            = 1;
 		doSqrt_i_tb       = 0;
-		signum_op_i_tb    <= 1;
-        extExp_op_i_tb    <= 8'b11111111;
-        extMant_op_i_tb   <= 8'b01111111;
-        isZero_op_i_tb    <= 0;
+		invSqrt_i_tb      = 1;
+		signum_op_i_tb    <= 0;
+        extExp_op_i_tb    <= 8'b10000101;
+        extMant_op_i_tb   <= 8'b11111000;
+        isZero_op_i_tb    <= 1;
         isInf_op_i_tb     <= 0;
-        isSNAN_op_i_tb    <= 1;
+        isSNAN_op_i_tb    <= 0;
         isQNAN_op_i_tb    <= 0;
 		
 		
@@ -56,6 +58,7 @@ module lampFPU_sqrt_tb;
 		sqrt0(	.clk(clk_tb),
 				.rst(rst_tb),
 				.doSqrt_i(doSqrt_i_tb),
+				.invSqrt_i(invSqrt_i_tb),
 				.signum_op_i(signum_op_i_tb),
 				.extExp_op_i(extExp_op_i_tb),
 				.extMant_op_i(extMant_op_i_tb),

@@ -20,6 +20,7 @@ module lampFPU_sqrt(
     
         //inputs
        doSqrt_i,
+       invSqrt_i,
        signum_op_i,
        extExp_op_i,
        extMant_op_i,
@@ -41,6 +42,7 @@ module lampFPU_sqrt(
     input   rst;
     
     input                              doSqrt_i;
+    input                              invSqrt_i;
     input   [LAMP_FLOAT_S_DW-1:0]	   signum_op_i;     // The operand signum (1 bit)
     input   [(LAMP_FLOAT_E_DW)-1:0]    extExp_op_i;     
     input   [(1+LAMP_FLOAT_F_DW)-1:0]  extMant_op_i;    // The extended mantissa (8 bits)
@@ -74,6 +76,7 @@ module lampFPU_sqrt(
    logic                            isZero_op_r, isInf_op_r, isSNAN_op_r, isQNAN_op_r;
 
    logic                            srm_doSqrt;
+   logic                            srm_invSqrt;
    logic                            srm_is_exp_odd;
    logic [(1+LAMP_FLOAT_F_DW)-1:0]  srm_s;
    logic [LAMP_FLOAT_E_DW-1:0]      srm_res;
@@ -89,6 +92,7 @@ module lampFPU_sqrt(
      .doSqrt_i (srm_doSqrt),
      .s_i  (srm_s),
      .is_exp_odd_i  (srm_is_exp_odd),
+     .invSqrt_i(srm_invSqrt),
      .special_case_i    (isCheckNanInfValid),
      .res_o  (srm_res),
      .valid_o (srm_valid)
@@ -98,6 +102,7 @@ module lampFPU_sqrt(
     //      wire assignments      //
     //////////////////////////////////////////////////////////////////
     assign srm_doSqrt       = doSqrt_i;
+    assign srm_invSqrt      = invSqrt_i;
     assign srm_is_exp_odd   = ~extExp_op_i[0];
     assign srm_s            = extMant_op_i;
 
@@ -146,7 +151,7 @@ module lampFPU_sqrt(
     always_comb
     begin
         {isCheckNanInfValid, isZeroRes, isCheckInfRes, isCheckNanRes, isCheckSignRes} = FUNC_calcInfNanZeroResSqrt(
-                        isZero_op_r, isInf_op_r, signum_op_r, isSNAN_op_r, isQNAN_op_r      /*operand */
+                        isZero_op_r, isInf_op_r, signum_op_r, isSNAN_op_r, isQNAN_op_r, invSqrt_i      /*operand */
                 );
         
         unique if (isZeroRes)
@@ -163,14 +168,7 @@ module lampFPU_sqrt(
         end
         else
         begin
-            if (extExp_op_i >= LAMP_FLOAT_E_BIAS)     //exp >= 127
-            begin
-                e_res_next      = LAMP_FLOAT_E_BIAS + (extExp_op_i - LAMP_FLOAT_E_BIAS >> 1) ;       //Es: exp = 133 (2^6) --> 127 + ((133 - 127) / 2) --> 127 + (6/2) --> 130 (2^3)
-            end
-            else
-            begin
-                e_res_next      = LAMP_FLOAT_E_BIAS - (LAMP_FLOAT_E_BIAS - extExp_op_i >> 1);        //Es: exp = 121 (2^-6) --> 127 - ((127 - 121) / 2) --> 127 - (6/2) --> 124 (2^-3)
-            end
+            e_res_next          = FUNC_calcExpSquareRoot( extExp_op_i, invSqrt_i );
             s_res_next          = 0;
             f_res_next          = srm_res;
         end
