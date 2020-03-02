@@ -1,4 +1,3 @@
-`timescale 1ns / 1ps
 
 //////////////////////////////////////////////////////////////////////////////////
 // Create Date: 02/17/2020 04:00:13 PM
@@ -87,15 +86,15 @@ module lampFPU_sqrt(
    //      internal submodules      //
    //////////////////////////////////////////////////////////////////
    SquareRootModule SquareRootModule0 (
-     .clk  (clk),
-     .rst  (rst),
-     .doSqrt_i (srm_doSqrt),
-     .s_i  (srm_s),
-     .is_exp_odd_i  (srm_is_exp_odd),
-     .invSqrt_i(srm_invSqrt),
+     .clk               (clk),
+     .rst               (rst),
+     .doSqrt_i          (srm_doSqrt),
+     .s_i               (srm_s),
+     .is_exp_odd_i      (srm_is_exp_odd),
+     .invSqrt_i         (srm_invSqrt),
      .special_case_i    (isCheckNanInfValid),
-     .res_o  (srm_res),
-     .valid_o (srm_valid)
+     .res_o             (srm_res),
+     .valid_o           (srm_valid)
     );
     
     //////////////////////////////////////////////////////////////////
@@ -168,9 +167,9 @@ module lampFPU_sqrt(
         end
         else
         begin
-            e_res_next          = FUNC_calcExpSquareRoot( extExp_op_i, invSqrt_i );
-            s_res_next          = 0;
-            f_res_next          = srm_res;
+            e_res_next  = FUNC_calcExpSquareRoot( extExp_op_i, invSqrt_i );
+            s_res_next  = 0;
+            f_res_next  = srm_res;
         end
         
         valid_next  = srm_valid;

@@ -544,7 +544,7 @@ package lampFPU_pkg;
             if(isZero_op_i) // both +/- 0
                 isZeroRes = 1;
             else if(sign_op_i || isOp_Nan) // both sqrt(- inf) and sqrt(-X), Nan
-               isNanRes = 1;
+                isNanRes = 1;
             else if(isInf_op_i) // sqrt(+inf)
                 isInfRes = 1;
         end
@@ -562,7 +562,7 @@ package lampFPU_pkg;
             if (exp >= LAMP_FLOAT_E_BIAS)     //exp >= 127
                 return LAMP_FLOAT_E_BIAS - (exp - LAMP_FLOAT_E_BIAS >> 1) - 1;    //Es: exp = 133 (2^6) --> 127 - ((133 - 127) / 2) - 1 --> 127 - (6/2) - 1 --> 123 (2^-4)
             else
-                return LAMP_FLOAT_E_BIAS + (LAMP_FLOAT_E_BIAS - exp - 1 >> 1);    //Es: exp = 121 (2^-6) --> 127 + ((127 - 121 - 1) / 2) --> 127 + (7/2) --> 130 (2^3)
+                return LAMP_FLOAT_E_BIAS + (LAMP_FLOAT_E_BIAS - exp - 1 >> 1);    //Es: exp = 121 (2^-6) --> 127 + ((127 - 121 - 1) / 2) --> 127 + (5/2) --> 129 (2^2)
         end
         else
         begin

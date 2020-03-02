@@ -26,12 +26,14 @@ module lampFPU_sqrt_tb;
 	begin
 		clk_tb            <= 1;
 		rst_tb            = 1;
-		doSqrt_i_tb       = 0;
-		invSqrt_i_tb      = 1;
+		
+		//    inputs
+		doSqrt_i_tb       <= 0;
+		invSqrt_i_tb      <= 0;
 		signum_op_i_tb    <= 0;
-        extExp_op_i_tb    <= 8'b10000101;
-        extMant_op_i_tb   <= 8'b11111000;
-        isZero_op_i_tb    <= 1;
+        extExp_op_i_tb    <= 8'b10000100;
+        extMant_op_i_tb   <= 8'b10011100;
+        isZero_op_i_tb    <= 0;
         isInf_op_i_tb     <= 0;
         isSNAN_op_i_tb    <= 0;
         isQNAN_op_i_tb    <= 0;

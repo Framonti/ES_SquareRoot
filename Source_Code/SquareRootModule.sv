@@ -1,4 +1,3 @@
-`timescale 1ns / 1ps
 
 //////////////////////////////////////////////////////////////////////////////////
 // Create Date: 02/10/2020 09:49:53 AM
@@ -35,7 +34,7 @@ module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, invSqrt_i, specia
 //////////////////////////////////////////////////////////////////
 
     logic  [2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	b_tmp;             //32 bits
-	logic  [2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	y_tmp;             //16 bits
+	logic  [2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	y_tmp;             //32 bits
 	logic  [2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	x_tmp;             //32 bits
 	logic  [(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	    r_tmp;             //16 bits
 	
@@ -136,19 +135,19 @@ module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, invSqrt_i, specia
 			             if (invSqrt_r)
 			             begin
 			                 y_tmp = (y_r * INV_SQRT2);
-			                 res_next = y_tmp[(2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-3)-:(1+LAMP_FLOAT_F_DW)] + 2 * (y_r[7] | y_r[6]);      //First 2 bits are always 0
+			                 res_next = y_tmp[(2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-3)-:(1+LAMP_FLOAT_F_DW)] + (y_tmp[21] | y_tmp[20]);      //First 2 bits are always 0
 			             end
 			             else
 			             begin
 			                 x_tmp = (x_r * SQRT2);
-			                 res_next = x_tmp[(2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-2)-:(1+LAMP_FLOAT_F_DW)] + 2 * (x_r[7] | x_r[6]);
+			                 res_next = x_tmp[(2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-2)-:(1+LAMP_FLOAT_F_DW)] + (x_tmp[22] | x_tmp[21]);
 			             end
                      end
                      else
                      begin
                         if (invSqrt_r)
                         begin
-                            res_next = y_r[((1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-2)-:(1+LAMP_FLOAT_F_DW)] + (y_r[7] | y_r[6]);
+                            res_next = y_r[((1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-2)-:(1+LAMP_FLOAT_F_DW)] + (y_r[6] | y_r[5]);
                         end
                         else
                         begin
