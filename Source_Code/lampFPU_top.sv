@@ -95,6 +95,12 @@ output	logic							isReady_o;
 	logic									cmp_res;
 	logic									cmp_isResValid;
 	logic									cmp_isCmpInvalid;
+	
+	//  sqrt & 1/sqrt outputs
+	logic                                   sqrt_s_res;
+	logic   [LAMP_FLOAT_E_DW-1:0]           sqrt_e_res;
+	logic   [LAMP_FLOAT_F_DW-1:0]           sqrt_f_res;
+	logic                                   sqrt_valid;
 
 	logic	[LAMP_FLOAT_DW-1:0]				i2f_res;
 	logic									i2f_isResValid;
@@ -115,6 +121,8 @@ output	logic							isReady_o;
 	logic									doCmpEq_r, doCmpEq_next;
 	logic									doCmpLt_r, doCmpLt_next;
 	logic									doCmpLe_r, doCmpLe_next;
+	logic                                   doSqrt_r, doSqrt_next;
+	logic                                   invSqrt_r, invSqrt_next;
 
 	// FUs results and valid bits
 	logic	[LAMP_INTEGER_DW-1:0]			res;
@@ -233,6 +241,8 @@ output	logic							isReady_o;
 			doCmpEq_r			<=	1'b0;
 			doCmpLt_r			<=	1'b0;
 			doCmpLe_r			<=	1'b0;
+			doSqrt_r            <=  1'b0;
+			invSqrt_r           <=  1'b0;
 			flush_r				<=	1'b0;
 			opcode_r			<=	FPU_IDLE;
 			rndMode_r			<=	FPU_RNDMODE_NEAREST;
@@ -255,6 +265,8 @@ output	logic							isReady_o;
 			doCmpEq_r			<=	doCmpEq_next;
 			doCmpLt_r			<=	doCmpLt_next;
 			doCmpLe_r			<=	doCmpLe_next;
+			doSqrt_r            <=  doSqrt_next;
+			invSqrt_r           <=  invSqrt_next;
 			flush_r				<=	flush_r_next;
 			opcode_r			<=	opcode_r_next;
 			rndMode_r			<=	rndMode_r_next;
@@ -282,6 +294,8 @@ output	logic							isReady_o;
 		doCmpEq_next			=	1'b0;
 		doCmpLt_next			=	1'b0;
 		doCmpLe_next			=	1'b0;
+		doSqrt_next             =   1'b0;
+		invSqrt_next            =   1'b0;
 
 		flush_r_next			=	flush_r;
 		opcode_r_next			=	opcode_r;
@@ -315,23 +329,33 @@ output	logic							isReady_o;
 				begin
 					ss_next							=	WORK;
 					case (opcode_i)
-						FPU_ADD	:
+						FPU_ADD	      :
 						begin
 									doAddSub_r_next	=	1'b1;
 									isOpSub_r_next	=	1'b0;
 						end
-						FPU_SUB	:
+						FPU_SUB	      :
 						begin
 									doAddSub_r_next	=	1'b1;
 									isOpSub_r_next	=	1'b1;
 						end
-						FPU_MUL	:	doMul_next		=	1'b1;
-						FPU_DIV	:	doDiv_next		=	1'b1;
-						FPU_F2I	:	doF2i_next		=	1'b1;
-						FPU_I2F	:	doI2f_next		=	1'b1;
-						FPU_EQ	:	doCmpEq_next	=	1'b1;
-						FPU_LT	:	doCmpLt_next	=	1'b1;
-						FPU_LE	:	doCmpLe_next	=	1'b1;
+						FPU_MUL	      :	doMul_next		=	1'b1;
+						FPU_DIV	      :	doDiv_next		=	1'b1;
+						FPU_F2I	      :	doF2i_next		=	1'b1;
+						FPU_I2F	      :	doI2f_next		=	1'b1;
+						FPU_EQ	      :	doCmpEq_next	=	1'b1;
+						FPU_LT	      :	doCmpLt_next	=	1'b1;
+						FPU_LE	      :	doCmpLe_next	=	1'b1;
+						FPU_SQRT      :
+						begin
+						            doSqrt_next     =   1'b1;
+						            invSqrt_next    =   1'b0;
+						end
+						FPU_INVSQRT   :
+						begin
+						            doSqrt_next     =   1'b1;
+                                    invSqrt_next    =   1'b1;
+						end
 					endcase
 					flush_r_next						=	'0;
 					opcode_r_next						=	opcode_i;
@@ -400,6 +424,14 @@ output	logic							isReady_o;
 						res							=	{{(LAMP_INTEGER_DW-1){1'b0}}, cmp_res};
 						isResValid					=	cmp_isResValid;
 					end
+					FPU_SQRT, FPU_INVSQRT:
+					begin
+					    s_res                       =   sqrt_s_res;
+					    e_res                       =   sqrt_e_res;
+					    f_res                       =   sqrt_f_res;
+					    
+					    isResValid                  =   sqrt_valid;
+					end
 				endcase
 
 				if (isResValid)
@@ -413,7 +445,7 @@ output	logic							isReady_o;
 			begin
 				if (padv_i)
 				begin
-					isResultValid_o_next			=  1'b0;
+					isResultValid_o_next			=   1'b0;
 					ss_next							=	IDLE;
 				end
 			end
@@ -713,5 +745,26 @@ output	logic							isReady_o;
 			.isCmpValid_o			(cmp_isResValid),
 			.isCmpInvalid_o			(cmp_isCmpInvalid)
 		);
+		
+	lampFPU_sqrt #()
+        sqrt0 (    
+            .clk                    (clk),
+            .rst                    (rst),
+            //  inputs
+            .doSqrt_i               (doSqrt_r),
+            .invSqrt_i              (invSqrt_r),
+            .signum_op_i            (s_op1_r),
+            .extExp_op_i            (e_op1_r),
+            .extMant_op_i           (extF_op1_r),
+            .isInf_op_i             (isInf_op1_r),
+            .isZero_op_i            (isZ_op1_r),
+            .isQNAN_op_i            (isQNAN_op1_r),
+            .isSNAN_op_i            (isSNAN_op1_r),
+            //  outputs
+            .valid_o                (sqrt_valid),
+            .s_res_o                (sqrt_s_res),
+            .e_res_o                (sqrt_e_res),
+            .f_res_o                (sqrt_f_res)
+        );
 
 endmodule
