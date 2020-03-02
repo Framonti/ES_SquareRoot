@@ -1,13 +1,14 @@
 For our project we used the Hardware Description Language (HDL) SystemVerilog. SystemVerilog allows to create a device-independent representation of digital logic and is the de-facto standard for digital design and expecially for verification (together with VHDL). 
 In SystemVerilog, the \emph{modules} are the basic building blocks. SystemVerilog design consists in interconnected modules.
-Our implementation is based on two interconnected modules:
+Our implementation is based on two new interconnected modules together with the original FPU, properly modified:
 
 \begin{itemize}
-\item \emph{lampFPU\_sqrt.sv} is the top module, called from the external component of the FPU; it mainly computes the exponent of the number we want the Square Root (or Inv Square Root) of, manages some special cases (Square Root of NaN, Square Root of negative number, etc.) and instantiates SquareRootModule.sv
+\item \emph{lampFPU\_sqrt.sv} is the top module, called from the external component of the FPU; it mainly computes the exponent of the number we want the Square Root (or Inv Square Root) of, manages some special cases (Square Root of NaN, Square Root of negative number, etc.) and instantiates \emph{SquareRootModule.sv}
 \item \emph{SquareRootModule.sv} implements Goldschmidt's algorithm for the Mantissa of a bfloat16 number. 
+\item Our source code also uses some functions and constants in order to make the design parametric. We imported the already existing package \emph{lampFPU\_pkg.sv} containing some useful parameters. We then added some other values and functions we needed. We highlight that in doing so we greatly accelerated the integration process of our modules with the rest of the FPU.
+\item We modified \emph{lampFPU\_top.sv} in order to properly manage the square root operation, adding the required internal wires, instantiating \emph{lampFPU\_sqrt.sv} and binding the inputs and outputs to our module. We assigned the square root to the operation code 10 and to the inverse square root to 11. 
+\item The folder Source\_Code also contains other SystemVerilog files already implemented for the bfloat16 FPU. We need these modules because \emph{lampFPU\_top.sv} instantiates them.
 \end{itemize}
-
-Our source code also uses some functions and constants in order to make the design parametric. We imported the already existing package \emph{lampFPU\_pkg.sv} containing some useful parameters. We then added some other values and functions we needed. We highlight that in doing so we greatly accelerated the integration process of our modules with the rest of the FPU. \\
 
 The Square Root algorithm requires to compute not only the Mantissa, but the exponent too. \emph{lampFPU\_sqrt.sv} and  \emph{SquareRootModule.sv} need to collaborate in order to obtain the correct result. 
 \begin{itemize}
@@ -48,7 +49,7 @@ The square root is a particular operation, since it can't produce neither an Ove
 This means that if X is a number that can be represented in bfloat16, its square root can always be represented in bfloat16. For this reason, \emph{lampFPU\_sqrt.sv} doesn't need to manage Overflow or Underflow cases.\\ \\
 % add why don't need normalization
 %add module interface%
-The sequential logic of  \emph{lampFPU\_sqrt.sv} resets to zero the module's internal wires and the outputs when the input \emph{rst} is 1. Otherwise, it saves some of the input into internal registers and updates the outputs.\\\\
+The sequential logic of  \emph{lampFPU\_sqrt.sv} resets to zero the module's internal wires and the outputs when the input \emph{rst} is 1. Otherwise, it saves some of the inputs into internal registers and updates the outputs.\\\\
 The combinational logic of \emph{lampFPU\_sqrt.sv} firstly checks if we're trying to compute the Square Root or Inverse Square Root of a special case, using the function \emph{FUNC\_calcInfNanZeroResSqrt}. We have the following:
 \begin{itemize}
 \item $\sqrt{+0}$ = $+0$ 
@@ -65,6 +66,6 @@ The combinational logic of \emph{lampFPU\_sqrt.sv} firstly checks if we're tryin
 \item $\frac{1}{\sqrt{-X}}$ = NaN  (X is any generic number) 
 \end{itemize}
 
-If we are not in a special case, we compute the exponent and wait until the internal module computes the square root or inverse square root of the Mantissa (we uses  \emph{srm\_valid} for it) and then we return the final value as outputs. 
+If we are not in a special case, we compute the exponent and wait until the internal module computes the square root or inverse square root of the Mantissa (we uses  \emph{srm\_valid} for it) and then we return the final value as outputs. \\
 
 \clearpage
