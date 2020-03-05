@@ -239,6 +239,26 @@ DPI_fle(unsigned int op1, unsigned int op2)
 	return res;
 }
 
+unsigned int
+DPI_sqrt(unsigned int op)
+{
+	float f_op = *((float*) &op);
+	//perform sqrt
+	float f_res = sqrtf(f_op);
+	// return 32bit float encoding
+	return *((unsigned int*) &f_res);
+}
+
+unsigned int
+DPI_invSqrt(unsigned int op)
+{
+	float f_op = *((float*) &op);
+	//perform sqrt
+	float f_res = 1/sqrtf(f_op);
+	// return 32bit float encoding
+	return *((unsigned int*) &f_res);
+}
+
 //int
 //main()
 //{
