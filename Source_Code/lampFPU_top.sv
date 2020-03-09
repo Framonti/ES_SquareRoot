@@ -430,6 +430,7 @@ output	logic							isReady_o;
 					    e_res                       =   sqrt_e_res;
 					    f_res                       =   sqrt_f_res;
 					    
+					    res                         =   {sqrt_s_res, sqrt_e_res, sqrt_f_res};
 					    isResValid                  =   sqrt_valid;
 					end
 				endcase
@@ -746,8 +747,8 @@ output	logic							isReady_o;
 			.isCmpInvalid_o			(cmp_isCmpInvalid)
 		);
 		
-	lampFPU_sqrt #()
-        sqrt0 (    
+	lampFPU_sqrt
+        lampFPU_sqrt0 (    
             .clk                    (clk),
             .rst                    (rst),
             //  inputs

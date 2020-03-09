@@ -38,6 +38,10 @@ package lampFPU_pkg;
 	parameter MINUS_INF			=	16'hff80;
 	parameter PLUS_ZERO			=	16'h0000;
 	parameter MINUS_ZERO		=	16'h8000;
+	parameter PLUS_SNAN         =   16'h7fbf;
+	parameter MINUS_SNAN        =   16'hffbf;
+	parameter PLUS_QNAN         =   16'h7fc0;
+	parameter MINUS_QNAN        =   16'hffc0;
 
 	parameter INF_E_F			=	15'b111111110000000; // w/o sign
 	parameter SNAN_E_F			=	15'b111111110111111; // w/o sign

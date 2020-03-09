@@ -27,6 +27,8 @@ module tb_lampFPU;
 	import "DPI-C" function int unsigned DPI_fle( input int unsigned op1, input int unsigned op2 );
 	import "DPI-C" function int unsigned DPI_i2f( input int unsigned op1 );
 	import "DPI-C" function int unsigned DPI_f2i( input int unsigned op1 );
+	import "DPI-C" function int unsigned DPI_sqrt( input int unsigned op1 );
+	import "DPI-C" function int unsigned DPI_invSqrt( input int unsigned op1 );
 
 	parameter HALF_CLK_PERIOD_NS=20;
 
@@ -92,6 +94,8 @@ module tb_lampFPU;
 		TASK_testArith (FPU_DIV);
 		TASK_testCmp ();
 		TASK_testI2f ();
+		TASK_testSqrt  (FPU_SQRT);
+		TASK_testSqrt  (FPU_INVSQRT);
 		rndMode_i_tb	= 	FPU_RNDMODE_TRUNCATE;
 		TASK_testF2i ();
 		repeat(200) @(posedge clk);
@@ -258,6 +262,36 @@ module tb_lampFPU;
 
 		//	TODO: NaNs!!!
 	endtask
+	
+	task TASK_testSqrt (input opcodeFPU_t opcode);
+	    logic	 [LAMP_FLOAT_S_DW-1:0]	  op1_sign;
+        logic    [LAMP_FLOAT_E_DW-1:0]    op1_exponent;
+        logic    [LAMP_FLOAT_F_DW-1:0]    op1_fraction;
+        
+        int                               numTest;
+        
+        numTest  =  0;
+        repeat (100)
+        begin
+            @(posedge clk);
+            numTest++;
+            $display("Test-%d",numTest);
+            op1_sign        =    $urandom_range(0,1);
+            op1_exponent    =    $urandom_range(0,255);
+            op1_fraction    =    (op1_exponent>=0 && op1_exponent<255) ? $random : $urandom_range(0,1)<<22 /*inf or qnan*/;
+        
+            TASK_doSqrt_op (opcode, {op1_sign, op1_exponent, op1_fraction});
+        end
+        
+        TASK_doSqrt_op (opcode, PLUS_INF);
+        TASK_doSqrt_op (opcode, MINUS_INF);
+        TASK_doSqrt_op (opcode, PLUS_ZERO);
+        TASK_doSqrt_op (opcode, MINUS_ZERO);
+        TASK_doSqrt_op (opcode, PLUS_QNAN);
+        TASK_doSqrt_op (opcode, MINUS_QNAN);
+        TASK_doSqrt_op (opcode, PLUS_SNAN);
+        TASK_doSqrt_op (opcode, MINUS_SNAN);
+	endtask
 
 	task TASK_doArith_op (input opcodeFPU_t opcode, input logic [LAMP_FLOAT_DW-1:0] op1, input logic [LAMP_FLOAT_DW-1:0] op2);
 		logic	[31:0]	tb_res;
@@ -386,6 +420,39 @@ module tb_lampFPU;
 		end
 		$strobe ("@%0t - END FPU operation", $time);
 	endtask
+	
+	task TASK_doSqrt_op(input opcodeFPU_t opcode, input logic [LAMP_FLOAT_DW-1:0] op1);
+        logic    [31:0]    tb_res;
+        
+        case (opcode)
+            FPU_SQRT:       tb_res    =    DPI_sqrt     (op1 << (LAMP_INTEGER_DW - LAMP_FLOAT_DW));
+            FPU_INVSQRT:    tb_res    =    DPI_invSqrt  (op1 << (LAMP_INTEGER_DW - LAMP_FLOAT_DW));
+        endcase
+        
+        $strobe ("@%0t - Start FPU operation: opcode:%s",
+                                        $time, opcode.name);
+                                        
+        @(posedge clk);
+        opcodeFPU_i_tb    <=    opcode;
+        op1_i_tb          <=    op1;
+        
+        @(posedge clk);
+        opcodeFPU_i_tb    <=    FPU_IDLE;
+        wait (isResultValid_o_tb);
+        $display ("OP1 - S=%b E=0x%02x f=0x%x", op1[LAMP_FLOAT_DW-1], op1[LAMP_FLOAT_DW-2-:LAMP_FLOAT_E_DW], op1[0+:LAMP_FLOAT_F_DW]);
+        
+        if (tb_res[31-:LAMP_FLOAT_DW] !== result_o_tb)
+        begin
+            $display("ERR DPI-FPU - S=%b E=0x%02x f=0x%x", tb_res[31], tb_res[30-:LAMP_FLOAT_E_DW], tb_res[30-LAMP_FLOAT_E_DW-:LAMP_FLOAT_F_DW]);
+            $display("ERR RTL-FPU - S=%b E=0x%02x f=0x%x", result_o_tb[LAMP_FLOAT_DW-1], result_o_tb[LAMP_FLOAT_DW-2-:LAMP_FLOAT_E_DW], result_o_tb[0+:LAMP_FLOAT_F_DW]);
+        end
+        else
+        begin
+            $display("OK DPI-FPU - S=%b E=0x%02x f=0x%x", tb_res[31], tb_res[30-:LAMP_FLOAT_E_DW], tb_res[30-LAMP_FLOAT_E_DW-:LAMP_FLOAT_F_DW]);
+            $display("OK RTL-FPU - S=%b E=0x%02x f=0x%x", result_o_tb[LAMP_FLOAT_DW-1], result_o_tb[LAMP_FLOAT_DW-2-:LAMP_FLOAT_E_DW], result_o_tb[0+:LAMP_FLOAT_F_DW]);
+        end
+        $strobe ("@%0t - END FPU operation", $time);
+    endtask
 
 	task TASK_doFPU_op;
 		opcodeFPU_t  tb_opcodeFPU;

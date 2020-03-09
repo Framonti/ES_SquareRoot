@@ -109,19 +109,22 @@ module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, invSqrt_i, specia
 		case (ss)
 			IDLE:
 			begin
-			    if (special_case_i)
-			    begin
-			        valid_next = 1;
-			    end
-				else if (doSqrt_i)
+				if (doSqrt_i)
 				begin
-					ss_next            =   SQRT_B;
-					b_next             =   s_i << (1+LAMP_FLOAT_F_DW);                     //8 bits shift
-					r_next             =   (THREE_9 - {1'b0, s_i}) >> 1;
-                    y_next             =   r_next << (1+LAMP_FLOAT_F_DW);
-					x_next		       =   ((s_i * r_next) << 1);   //first bit is always a 0 so we can remove it
-					is_exp_odd_next    =   is_exp_odd_i;
-					invSqrt_next       =   invSqrt_i;
+				    if (special_case_i)
+                    begin
+                        valid_next = 1;
+                    end
+                    else
+                    begin
+                        ss_next            =   SQRT_B;
+                        b_next             =   s_i << (1+LAMP_FLOAT_F_DW);                     //8 bits shift
+                        r_next             =   (THREE_9 - {1'b0, s_i}) >> 1;
+                        y_next             =   r_next << (1+LAMP_FLOAT_F_DW);
+                        x_next		       =   ((s_i * r_next) << 1);   //first bit is always a 0 so we can remove it
+                        is_exp_odd_next    =   is_exp_odd_i;
+                        invSqrt_next       =   invSqrt_i;
+                    end
 				end
 			end
 			
