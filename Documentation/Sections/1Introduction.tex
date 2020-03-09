@@ -16,7 +16,7 @@ Under this standard (n is the number of bits reserved to the exponent):
 	\item The exponent E is unsigned, with values between 0 and ($2^{n} -1$)
 	\item	The exponent E is biased, meaning that is encoded using an offset-binary representation, with the zero offset being 			$2^{n-1} – 1$
 	\item	The mantissa has an hidden bit, always set to 1; therefore, the actual mantissa is 1.M
-	\item	The standard also introduces some special values, for different purposes, such as Infinite (Inf) and Not-a-Number (NAN)
+	\item	The standard also introduces some special values, for different purposes, such as Infinite (Inf) and Not-a-Number (NaN)
 \end{itemize}
 
 The single and double precision floating point representations are the two most used in modern computers and mobile phones. These devices usually aren’t particularly constrained by memory space and may actually need the accuracy offered by a 32-bit or even 64-bit representation.\\
@@ -38,8 +38,11 @@ However, it still misses some other important operations, such as the fused Mult
 More formally, the goals of our project are:
 \begin{itemize}
 	\item Add support for Square Root operation
-	\item Verify the implementation correctness, comparing the results produced by our design with the ones obtained from the C function sqrt
 	\item Add support for the INVSQRT operation
+	\item Integrate our design with the already developed FPU
+	\item Verify the implementation correctness, comparing the results produced by our design with the ones obtained from the C function sqrt
 \end{itemize}
+
+The rest of this document is organized as follow: in section 2, we explain the algorithm used for computing the Square Root of a real number. In section 3 we describe our design decisions and our implementation. In section 4, we show the benchmarks used to test the correctness of our implementation. Finally, in section 5 we offer a conclusion for our work.
 
 \clearpage

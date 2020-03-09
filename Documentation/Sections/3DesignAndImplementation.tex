@@ -25,14 +25,14 @@ $$ \sqrt{\frac{1}{2*M}} = \frac{1}{\sqrt{2} * \sqrt{M}} $$
 
 \subsection{SquareRootModule.sv}
 We firstly describe the SquareRootModule.sv module. \\
-In general, \emph{SquareRootModule.sv} takes as input an 8-bits Mantissa M between 1.0 (8b'100000000) and 1.9921875 (8b'11111111) and returns seven bits representing $\sqrt{M}$ or $\frac{1}{\sqrt{M}}$ (the first bit is implicity 1, as expected by the IEEE 754 standard).\\\\
+In general, \emph{SquareRootModule.sv} takes as input an 8-bits Mantissa M between 1.0 (8b'100000000) and 1.9921875 (8b'11111111) and returns 16 bits representing $\sqrt{M}$ or $\frac{1}{\sqrt{M}}$ (the first bit is implicity 1, as expected by the IEEE 754 standard). The Mantissa length is greater than expected by the bfloat16 standard, but we'll use this enhanched precision in order to properly round the result when needed.\\\\
 %----- add module interface ---
 The sequential logic of \emph{SquareRootModule.sv} implements a synchronous reset of the module, setting to zero all the internal wires if the input \emph{rst} is 1. Otherwise, it saves the values computed by the combinational logic into internal registers.\\\\
 The combinational logic of \emph{SquareRootModule.sv} implements a Finite State Machine with four different states:
 \begin{enumerate}
 \item Every times it starts, we compute the various values required by the algorithm, but we don't save them untill we're in the right State.
 \item In the IDLE state, we initialize our internal variables as described in Section \ref{goldschmidt}, only if the external input \emph{doSqrt\_i} signals to start the computation and we're not in one of the special cases (Square Root of NaN, Square Root of Zero...). To note, we declare the number 3 as 9'b110000000; since our Significant occupies 8 bits and is between 1.0 and 1.9921875, in order to represent the number 3 we need to add an additional bit. 
-\item SQRT\_B is the output state; if $R_i$ is 1, we stop the computation, return the result (either the square root or the inverse square root) and signal the end by setting \emph{valid\_next} as 1. If the exponent of the bfloat16 we want the square root of is odd, we first multiply $X_i$ by $\sqrt{2}$ and $Y_i$ by $\frac{1}{\sqrt{2}}$, and then we took the 8 most significant bits. Since Goldschmidt's algorithm doesn't yeld a precise LSB, we round the result based on the 8th and 7th bit of x\_tmp or y\_tmp, which have 16 bits of precision. Instead, if the estimation of the square root is not good enough, we perform another iteration of the algorithm, by updating \emph{b\_next} and moving to the next state.
+\item SQRT\_B is the output state; if $R_i$ is 1, we stop the computation, return the result (either the square root or the inverse square root) and signal the end by setting \emph{valid\_next} as 1. If the exponent of the bfloat16 we want the square root of is odd, we first multiply $X_i$ by $\sqrt{2}$ and $Y_i$ by $\frac{1}{\sqrt{2}}$. Goldschmidt's algorithm doesn't yeld a precise LSB, but we return x\_tmp or y\_tmp, which have more precision than our final result. We delegate the rounding to \emph{lampFPU\_top.sv}. On the other hand, if the estimation of the square root is not good enough, we perform another iteration of the algorithm, by updating \emph{b\_next} and moving to the next state.
 \item In the SQRT\_R state, we update $R_i$ as requested by the algorithm.
 \item In the SQRT\_XY state, we update $X_i$ and $Y_i$ as requested by the algorithm and move back to SQRT\_B.
 \end{enumerate}
@@ -50,7 +50,7 @@ This means that if X is a number that can be represented in bfloat16, its square
 % add why don't need normalization
 %add module interface%
 The sequential logic of  \emph{lampFPU\_sqrt.sv} resets to zero the module's internal wires and the outputs when the input \emph{rst} is 1. Otherwise, it saves some of the inputs into internal registers and updates the outputs.\\\\
-The combinational logic of \emph{lampFPU\_sqrt.sv} firstly checks if we're trying to compute the Square Root or Inverse Square Root of a special case, using the function \emph{FUNC\_calcInfNanZeroResSqrt}. We have the following:
+The combinational logic of \emph{lampFPU\_sqrt.sv} firstly checks if we're trying to compute the Square Root or Inverse Square Root of a special case, using the function \emph{FUNC\_calcInfNanZeroResSqrt}. In this case, the output doesn't need to be rounded. We have the following:
 \begin{itemize}
 \item $\sqrt{+0}$ = $+0$ 
 \item $\sqrt{-0}$ = $-0$
@@ -66,6 +66,6 @@ The combinational logic of \emph{lampFPU\_sqrt.sv} firstly checks if we're tryin
 \item $\frac{1}{\sqrt{-X}}$ = NaN  (X is any generic number) 
 \end{itemize}
 
-If we are not in a special case, we compute the exponent and wait until the internal module computes the square root or inverse square root of the Mantissa (we uses  \emph{srm\_valid} for it) and then we return the final value as outputs. \\
+If we are not in a special case, we compute the exponent and wait until the internal module computes the square root or inverse square root of the Mantissa (we uses  \emph{srm\_valid} for it) and then we return the final value as outputs. To note, the signal \emph{f\_res\_o} has a dimention of 12 bits, and it needs to be rounded. We use the signal \emph{isToRound} to inform the top module. \\
 
 \clearpage
