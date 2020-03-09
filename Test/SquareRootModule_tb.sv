@@ -12,7 +12,7 @@ module SquareRootModule_tb;
 	logic                               special_case_i_tb;
 
 	logic								valid_o_tb;
-	logic [(1+LAMP_FLOAT_F_DW)-1:0] 	res_o_tb;
+	logic [2*(1+LAMP_FLOAT_F_DW)-1:0] 	res_o_tb;
 
 	always #5 clk_tb = ~clk_tb;
 
@@ -49,14 +49,14 @@ module SquareRootModule_tb;
 	end
 
 	SquareRootModule #()
-		sqrt0(	.clk(clk_tb),
-				.rst(rst_tb),
-				.doSqrt_i(doSqrt_i_tb),
-				.s_i(s_i_tb),
-				.is_exp_odd_i(is_exp_odd_i_tb),
-				.invSqrt_i(invSqrt_i_tb),
-				.special_case_i(special_case_i_tb),
-				.res_o(res_o_tb),
-				.valid_o(valid_o_tb));
+		sqrt0(	.clk            (clk_tb),
+				.rst            (rst_tb),
+				.doSqrt_i       (doSqrt_i_tb),
+				.s_i            (s_i_tb),
+				.is_exp_odd_i   (is_exp_odd_i_tb),
+				.invSqrt_i      (invSqrt_i_tb),
+				.special_case_i (special_case_i_tb),
+				.res_o          (res_o_tb),
+				.valid_o        (valid_o_tb));
 
 endmodule

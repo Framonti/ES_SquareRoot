@@ -32,7 +32,8 @@ module lampFPU_sqrt(
        s_res_o, 
        e_res_o, 
        f_res_o, 
-       valid_o
+       valid_o,
+       isToRound_o
   );
     
     import lampFPU_pkg::*;
@@ -53,7 +54,8 @@ module lampFPU_sqrt(
     output logic                            valid_o;
     output logic                            s_res_o;           // resulting sign (1 bit)
     output logic [LAMP_FLOAT_E_DW-1:0]	    e_res_o;           // resulting exponent (8 bits)
-    output logic [LAMP_FLOAT_F_DW-1:0]      f_res_o;           // resulting significand (7 bits)
+    output logic [LAMP_FLOAT_F_DW+5-1:0]    f_res_o;           // resulting significand (12 bits)
+    output logic                            isToRound_o;
    
    
    //////////////////////////////////////////////////////////////////
@@ -62,24 +64,25 @@ module lampFPU_sqrt(
    
    
    //Next values
-   logic                            valid_next;
-   logic                            s_res_next;
-   logic [LAMP_FLOAT_E_DW-1:0]      e_res_next;
-   logic [LAMP_FLOAT_F_DW-1:0]      f_res_next;
-   logic							isCheckNanInfValid;
-   logic                            isZeroRes;
-   logic                            isCheckInfRes;
-   logic                            isCheckNanRes;
-   logic                            isCheckSignRes;
-   logic [LAMP_FLOAT_S_DW-1:0]      signum_op_r;
-   logic                            isZero_op_r, isInf_op_r, isSNAN_op_r, isQNAN_op_r;
+   logic                                valid_next;
+   logic                                isToRound_next;
+   logic                                s_res_next;
+   logic [LAMP_FLOAT_E_DW-1:0]          e_res_next;
+   logic [LAMP_FLOAT_F_DW+5-1:0]        f_res_next;
+   logic							    isCheckNanInfValid;
+   logic                                isZeroRes;
+   logic                                isCheckInfRes;
+   logic                                isCheckNanRes;
+   logic                                isCheckSignRes;
+   logic [LAMP_FLOAT_S_DW-1:0]          signum_op_r;
+   logic                                isZero_op_r, isInf_op_r, isSNAN_op_r, isQNAN_op_r;
 
-   logic                            srm_doSqrt;
-   logic                            srm_invSqrt;
-   logic                            srm_is_exp_odd;
-   logic [(1+LAMP_FLOAT_F_DW)-1:0]  srm_s;
-   logic [LAMP_FLOAT_E_DW-1:0]      srm_res;
-   logic                            srm_valid;
+   logic                                srm_doSqrt;
+   logic                                srm_invSqrt;
+   logic                                srm_is_exp_odd;
+   logic [(1+LAMP_FLOAT_F_DW)-1:0]      srm_s;
+   logic [2*(1+LAMP_FLOAT_F_DW)-1:0]    srm_res;
+   logic                                srm_valid;
        
        
    //////////////////////////////////////////////////////////////////
@@ -121,6 +124,7 @@ module lampFPU_sqrt(
             isQNAN_op_r         <= 0;
             
             //Output registers
+            isToRound_o         <= 0;
             valid_o             <= 0;
             s_res_o             <= 0;
             e_res_o             <= '0;
@@ -136,6 +140,7 @@ module lampFPU_sqrt(
             isQNAN_op_r         <= isQNAN_op_i;
             
             //Output registers
+            isToRound_o         <= isToRound_next;
             valid_o             <= valid_next;
             s_res_o             <= s_res_next;
             e_res_o             <= e_res_next;
@@ -155,24 +160,25 @@ module lampFPU_sqrt(
         
         unique if (isZeroRes)
         begin
-            {s_res_next, e_res_next, f_res_next}    = {isCheckSignRes, ZERO_E_F[14:7], ZERO_E_F[6:0]};
+            {s_res_next, e_res_next, f_res_next}    = {isCheckSignRes, ZERO_E_F[14:7], ZERO_E_F[6:0], 5'b00000};
         end
         else if (isCheckInfRes)
         begin
-            {s_res_next, e_res_next, f_res_next}    = {isCheckSignRes, INF_E_F[14:7], INF_E_F[6:0]};
+            {s_res_next, e_res_next, f_res_next}    = {isCheckSignRes, INF_E_F[14:7], INF_E_F[6:0], 5'b00000};
         end
         else if (isCheckNanRes)
         begin
-            {s_res_next, e_res_next, f_res_next}    = {isCheckSignRes, QNAN_E_F[14:7], QNAN_E_F[6:0]};
+            {s_res_next, e_res_next, f_res_next}    = {isCheckSignRes, QNAN_E_F[14:7], QNAN_E_F[6:0], 5'b00000};
         end
         else
         begin
             e_res_next  = FUNC_calcExpSquareRoot( extExp_op_i, invSqrt_i );
             s_res_next  = 0;
-            f_res_next  = srm_res;
+            f_res_next  = srm_res[(2*(1+LAMP_FLOAT_F_DW)-1) -:(1+1+LAMP_FLOAT_F_DW+3/*G,R,S*/)];
         end
         
-        valid_next  = srm_valid;
+        isToRound_next  = ~isCheckNanInfValid;
+        valid_next      = srm_valid;
     end
 
 endmodule
