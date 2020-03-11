@@ -107,7 +107,7 @@ module lampFPU_sqrt(
     //////////////////////////////////////////////////////////////////
     assign srm_doSqrt       = doSqrt_i;
     assign srm_invSqrt      = invSqrt_i;
-    assign srm_is_exp_odd   = ~extExp_op_i[0];
+    assign srm_is_exp_odd   = (~extExp_op_i[0]);// & (extExp_op_i != 0);
     assign srm_s            = extMant_op_i;
 
     //////////////////////////////////////////////////////////////////
@@ -157,7 +157,7 @@ module lampFPU_sqrt(
     always_comb
     begin
         {isCheckNanInfValid, isZeroRes, isCheckInfRes, isCheckNanRes, isCheckSignRes} = FUNC_calcInfNanZeroResSqrt(
-                        isZero_op_r, isInf_op_r, signum_op_r, isSNAN_op_r, isQNAN_op_r, invSqrt_i      /*operand */
+                        isZero_op_i, isInf_op_i, signum_op_i, isSNAN_op_i, isQNAN_op_i, invSqrt_i      /*operand */
                 );
         
         unique if (isZeroRes)
@@ -179,7 +179,7 @@ module lampFPU_sqrt(
             
             f_initial = srm_res;
             stickyBit = |f_initial[2+:3];
-            f_res_next  = {1'b0, f_initial[(2*(1+LAMP_FLOAT_F_DW)-1) -:(1+1+LAMP_FLOAT_F_DW+3-1-1)], stickyBit};
+            f_res_next  = {1'b0, f_initial[(2*(1+LAMP_FLOAT_F_DW)-1) -:(1+1+LAMP_FLOAT_F_DW+3-1-1-1)], f_initial[(2*(1+LAMP_FLOAT_F_DW)-1) - (1+1+LAMP_FLOAT_F_DW+3-1-1)] | stickyBit, stickyBit};
         end
         
         isToRound_next  = ~isCheckNanInfValid;
