@@ -66,9 +66,11 @@ module lampFPU_sqrt(
    //Next values
    logic                                valid_next;
    logic                                isToRound_next;
+   logic                                stickyBit;
    logic                                s_res_next;
    logic [LAMP_FLOAT_E_DW-1:0]          e_res_next;
    logic [LAMP_FLOAT_F_DW+5-1:0]        f_res_next;
+   logic [2*(1+LAMP_FLOAT_F_DW)-1:0]    f_initial;
    logic							    isCheckNanInfValid;
    logic                                isZeroRes;
    logic                                isCheckInfRes;
@@ -174,7 +176,10 @@ module lampFPU_sqrt(
         begin
             e_res_next  = FUNC_calcExpSquareRoot( extExp_op_i, invSqrt_i );
             s_res_next  = 0;
-            f_res_next  = srm_res[(2*(1+LAMP_FLOAT_F_DW)-1) -:(1+1+LAMP_FLOAT_F_DW+3/*G,R,S*/)];
+            
+            f_initial = srm_res;
+            stickyBit = |f_initial[2+:3];
+            f_res_next  = {1'b0, f_initial[(2*(1+LAMP_FLOAT_F_DW)-1) -:(1+1+LAMP_FLOAT_F_DW+3-1-1)], stickyBit};
         end
         
         isToRound_next  = ~isCheckNanInfValid;
