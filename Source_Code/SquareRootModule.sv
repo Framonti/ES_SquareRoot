@@ -138,23 +138,23 @@ module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, invSqrt_i, specia
 			             if (invSqrt_r)
 			             begin
 			                 y_tmp = (y_r * INV_SQRT2);
-			                 res_next = y_tmp[(2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-3)-:(2*(1+LAMP_FLOAT_F_DW))];      //First 2 bits are always 0
+			                 res_next = y_tmp[(2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-2)-:(2*(1+LAMP_FLOAT_F_DW))];      //First 2 bits are always 0
 			             end
 			             else
 			             begin
 			                 x_tmp = (x_r * SQRT2);
-			                 res_next = x_tmp[(2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-2)-:(2*(1+LAMP_FLOAT_F_DW))];
+			                 res_next = x_tmp[(2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1)-:(2*(1+LAMP_FLOAT_F_DW))];
 			             end
                      end
                      else
                      begin
                         if (invSqrt_r)
                         begin
-                            res_next = y_r << 1;
+                            res_next = y_r;
                         end
                         else
                         begin
-                            res_next = x_r;
+                            res_next = x_r >> 1;
                         end
                      end
                      valid_next = 1'b1;
