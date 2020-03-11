@@ -573,7 +573,7 @@ package lampFPU_pkg;
             if (exp >= LAMP_FLOAT_E_BIAS)     //exp >= 127
                 return LAMP_FLOAT_E_BIAS + (exp - LAMP_FLOAT_E_BIAS >> 1) ;       //Es: exp = 133 (2^6) --> 127 + ((133 - 127) / 2) --> 127 + (6/2) --> 130 (2^3)
             else
-                return LAMP_FLOAT_E_BIAS - (LAMP_FLOAT_E_BIAS - exp >> 1);        //Es: exp = 121 (2^-6) --> 127 - ((127 - 121) / 2) --> 127 - (6/2) --> 124 (2^-3)
+                return LAMP_FLOAT_E_BIAS - ((LAMP_FLOAT_E_BIAS - exp + 1) >> 1);  //Es: exp = 121 (2^-6) --> 127 - ((127 - 121) / 2) --> 127 - (6/2) --> 124 (2^-3)
         end
         
         

@@ -99,8 +99,9 @@ output	logic							isReady_o;
 	//  sqrt & 1/sqrt outputs
 	logic                                   sqrt_s_res;
 	logic   [LAMP_FLOAT_E_DW-1:0]           sqrt_e_res;
-	logic   [LAMP_FLOAT_F_DW-1:0]           sqrt_f_res;
+	logic   [LAMP_FLOAT_F_DW+5-1:0]         sqrt_f_res;
 	logic                                   sqrt_valid;
+	logic                                   sqrt_isToRound;
 
 	logic	[LAMP_FLOAT_DW-1:0]				i2f_res;
 	logic									i2f_isResValid;
@@ -429,8 +430,9 @@ output	logic							isReady_o;
 					    s_res                       =   sqrt_s_res;
 					    e_res                       =   sqrt_e_res;
 					    f_res                       =   sqrt_f_res;
+					    isToRound                   =   sqrt_isToRound;
 					    
-					    res                         =   {sqrt_s_res, sqrt_e_res, sqrt_f_res};
+					    res                         =   res_postRnd;
 					    isResValid                  =   sqrt_valid;
 					end
 				endcase
@@ -762,6 +764,7 @@ output	logic							isReady_o;
             .isQNAN_op_i            (isQNAN_op1_r),
             .isSNAN_op_i            (isSNAN_op1_r),
             //  outputs
+            .isToRound_o            (sqrt_isToRound),
             .valid_o                (sqrt_valid),
             .s_res_o                (sqrt_s_res),
             .e_res_o                (sqrt_e_res),
