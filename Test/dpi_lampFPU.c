@@ -254,7 +254,7 @@ DPI_invSqrt(unsigned int op)
 {
 	float f_op = *((float*) &op);
 	//perform sqrt
-	float f_res = 1/sqrtf(f_op);
+	float f_res = 1.f / sqrtf(f_op);
 	// return 32bit float encoding
 	return *((unsigned int*) &f_res);
 }
