@@ -66,6 +66,18 @@ The combinational logic of \emph{lampFPU\_sqrt.sv} firstly checks if we're tryin
 \item $\frac{1}{\sqrt{-X}}$ = NaN  (X is any generic number) 
 \end{itemize}
 
-If we are not in a special case, we compute the exponent and wait until the internal module computes the square root or inverse square root of the Mantissa (we uses  \emph{srm\_valid} for it) and then we return the final value as outputs. To note, the signal \emph{f\_res\_o} has a dimention of 12 bits, and it needs to be rounded. We use the signal \emph{isToRound} to inform the top module. \\
+If we are not in a special case, we compute the exponent and wait until the internal module computes the square root or inverse square root of the Mantissa (we uses  \emph{srm\_valid} for it) and then we return the final value as outputs. To note, the signal \emph{f\_res\_o} has a dimention of 12 bits, and it needs to be rounded. The rounding is delegated to the top module, and is based on three bits:
+\begin{itemize}
+\item The Ground bit is the bit immediately on the left of the Mantissa LSB, so it's the 4\textsuperscript{th} bit of \emph{srm\_res}.
+\item The Round bit is on the left of the Ground bit, so it's the 3\textsuperscript{rd} bit of \emph{srm\_res}.
+\item The Sticky bit is computed as the logical or of the three remaining bits, from the 2\textsuperscript{nd} to the 0\textsuperscript{th} bit of \emph{srm\_res}. 
+\end{itemize}
+
+We inform the top module with the signal \emph{isToRound}; the rounding is performed using the function \emph{FUNC\_rndToNearestEven} which implements the following rules:
+\begin{itemize}
+\item If GRS = 0XX, then round down
+\item If GRS = 100, then round up if mantissa LSB is 1, otherwise round down
+\item Any other case, round up
+\end{itemize} 
 
 \clearpage
