@@ -296,7 +296,7 @@ output	logic							isReady_o;
 		doCmpLt_next			=	1'b0;
 		doCmpLe_next			=	1'b0;
 		doSqrt_next             =   1'b0;
-		invSqrt_next            =   1'b0;
+		invSqrt_next            =   invSqrt_r;
 
 		flush_r_next			=	flush_r;
 		opcode_r_next			=	opcode_r;
