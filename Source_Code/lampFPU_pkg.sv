@@ -538,7 +538,9 @@ package lampFPU_pkg;
        
         if (invSqrt_op_i)
         begin
-            if(isZero_op_i || sign_op_i || isOp_Nan) // both +/- 0, both sqrt(- inf) and sqrt(-X), Nan
+            if(isZero_op_i) // both +/- 0
+                isInfRes = 1;
+            else if(sign_op_i || isOp_Nan) //  both sqrt(- inf) and sqrt(-X), Nan
                 isNanRes = 1;
             else if(isInf_op_i) // sqrt(+inf)
                 isZeroRes = 1;
