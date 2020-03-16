@@ -559,6 +559,56 @@ package lampFPU_pkg;
                    
        return {isValidRes, isZeroRes, isInfRes, isNanRes, signRes}; 
     endfunction
+    
+    function automatic logic[18:0] FUNC_calcSqrtParams(
+            input           is_exp_odd_i,
+            input           invSqrt_i,
+            input   [2:0]   n_leading_zeros_i
+        );
+       logic        [15:0]  corrector;
+       logic        [2:0]   shift;
+        
+        
+       if (is_exp_odd_i)
+       begin
+           if (invSqrt_i)
+           begin
+               corrector = INV_SQRT2;
+               shift = 3;
+           end
+           else
+           begin
+               corrector = SQRT2;
+               shift = 2;
+           end
+       end
+       else
+       begin
+           case({invSqrt_i, n_leading_zeros_i})
+               4'b0_000: begin corrector = APPROX_ONE;          shift = 2;  end
+               4'b1_000: begin corrector = APPROX_ONE;          shift = 3;  end
+               
+               4'b0_001: begin corrector = INV_SQRT2;           shift = 3;  end
+               4'b0_010: begin corrector = APPROX_ONE   >> 1;   shift = 3;  end
+               4'b0_011: begin corrector = INV_SQRT2    >> 1;   shift = 4;  end
+               4'b0_100: begin corrector = APPROX_ONE   >> 2;   shift = 4;  end
+               4'b0_101: begin corrector = INV_SQRT2    >> 2;   shift = 5;  end
+               4'b0_110: begin corrector = APPROX_ONE   >> 3;   shift = 5;  end
+               4'b0_111: begin corrector = INV_SQRT2    >> 3;   shift = 6;  end
+               
+               4'b1_000: begin corrector = APPROX_ONE;          shift = 3;  end
+               4'b1_001: begin corrector = SQRT2;               shift = 2;  end
+               4'b1_010: begin corrector = APPROX_ONE;          shift = 3;  end
+               4'b1_011: begin corrector = SQRT2;               shift = 2;  end
+               4'b1_100: begin corrector = APPROX_ONE;          shift = 3;  end
+               4'b1_101: begin corrector = SQRT2;               shift = 2;  end
+               4'b1_110: begin corrector = APPROX_ONE;          shift = 3;  end
+               4'b1_111: begin corrector = SQRT2;               shift = 2;  end              
+           endcase
+       end
+                       
+       return {corrector, shift}; 
+    endfunction
 
     function automatic logic[(LAMP_FLOAT_E_DW)-1:0] FUNC_calcExpSquareRoot(
         input [(LAMP_FLOAT_E_DW)-1:0]   exp,

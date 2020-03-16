@@ -38,7 +38,7 @@ module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, invSqrt_i, specia
 	logic  [2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	y_tmp;             //32 bits
 	logic  [2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	x_tmp;             //32 bits
 	//logic  [(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	    r_tmp;             //16 bits
-	logic  [2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	r_tmp;             //32 bits
+	//logic  [2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	r_tmp;             //32 bits
 	
 	logic  [(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0]       b_r, b_next;       //16 bits
 	logic  [(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0]		y_r, y_next;       //16 bits
@@ -50,6 +50,11 @@ module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, invSqrt_i, specia
 	
 	logic  [2*(1+LAMP_FLOAT_F_DW)-1:0]					res_next;          //16 bits
 	logic												valid_next;        //1 bit
+	
+	logic  [(1+LAMP_FLOAT_F_DW)-1:0]                    f_r;              //8 bits
+	logic  [$clog2(1+LAMP_FLOAT_F_DW)-1:0]              n_leading_zeros;   //3 bits
+	logic  [(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0]       corrector;         //16 bits
+	logic  [$clog2(1+LAMP_FLOAT_F_DW)-1:0]              shift;             //3 bits
 
     
     localparam logic [1:0]  IDLE        = 2'b00,
@@ -68,8 +73,12 @@ module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, invSqrt_i, specia
                 y_r             <=    '0;
                 r_r             <=    '0;
                 x_r             <=    '0;
+                f_r             <=    '0;
                 is_exp_odd_r    <=    0;
                 invSqrt_r       <=    0;
+                n_leading_zeros <=    '0;
+                corrector       <=    '0;
+                shift           <=    '0;
                 res_o           <=    '0;
                 valid_o         <=    1'b0;
             end
@@ -124,14 +133,16 @@ module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, invSqrt_i, specia
                     else
                     begin
                         ss_next            =   SQRT_B;
-                        b_next             =   s_i << (1+LAMP_FLOAT_F_DW);                     //8 bits shift
+                        n_leading_zeros    =   FUNC_numLeadingZeros(s_i);
+                        f_r                =   s_i << n_leading_zeros;
+                        b_next             =   f_r << (1+LAMP_FLOAT_F_DW);                     //8 bits shift
                         
 //                        r_next             =   (THREE_9 - {1'b0, s_i}) >> 1;
 //                        y_next             =   r_next << (1+LAMP_FLOAT_F_DW);
 //                        x_next               =   ((s_i * r_next) << 1);   //first bit is always a 0 so we can remove it
-                        r_next             =   (THREE_17 - (s_i << 8)) >> 1;
+                        r_next             =   (THREE_17 - (f_r << 8)) >> 1;
                         y_next             =   r_next;
-                        x_tmp              =   s_i * r_next;
+                        x_tmp              =   f_r * r_next;
                         x_next		       =   x_tmp >> 7;   //first bit is always a 0 so we can remove it
                         is_exp_odd_next    =   is_exp_odd_i;
                         invSqrt_next       =   invSqrt_i;
@@ -144,30 +155,20 @@ module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, invSqrt_i, specia
 			    if (r_r == APPROX_ONE)
 			    begin
 			         ss_next = IDLE;
-			         if (is_exp_odd_r)
+			         
+			         {corrector, shift} = FUNC_calcSqrtParams(is_exp_odd_r, invSqrt_r, n_leading_zeros);
+			         
+			         if (invSqrt_r) 
 			         begin
-			             if (invSqrt_r)
-			             begin
-			                 y_tmp = (y_r * INV_SQRT2);
-			                 res_next = y_tmp[(2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-3)-:(2*(1+LAMP_FLOAT_F_DW))];      //First 2 bits are always 0
-			             end
-			             else
-			             begin
-			                 x_tmp = (x_r * SQRT2);
-			                 res_next = x_tmp[(2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-2)-:(2*(1+LAMP_FLOAT_F_DW))];
-			             end
-                     end
-                     else
-                     begin
-                        if (invSqrt_r)
-                        begin
-                            res_next = y_r << 1;
-                        end
-                        else
-                        begin
-                            res_next = x_r;
-                        end
-                     end
+			             y_tmp = (y_r * corrector);
+                         res_next = y_tmp[(2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-shift)-:(2*(1+LAMP_FLOAT_F_DW))];
+			         end
+			         else
+			         begin
+			             x_tmp = (x_r * corrector);
+                         res_next = x_tmp[(2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-shift)-:(2*(1+LAMP_FLOAT_F_DW))];
+			         end
+
                      valid_next = 1'b1;
 			    end
 			    else

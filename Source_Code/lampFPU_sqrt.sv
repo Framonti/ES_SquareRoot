@@ -107,7 +107,7 @@ module lampFPU_sqrt(
     //////////////////////////////////////////////////////////////////
     assign srm_doSqrt       = doSqrt_i;
     assign srm_invSqrt      = invSqrt_i;
-    assign srm_is_exp_odd   = (~extExp_op_i[0]);// & (extExp_op_i != 0);
+    assign srm_is_exp_odd   = (~extExp_op_i[0]) & (extExp_op_i != 0);
     assign srm_s            = extMant_op_i;
 
     //////////////////////////////////////////////////////////////////

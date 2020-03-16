@@ -35,8 +35,8 @@ module SquareRootModule_tb;
 		@(posedge clk_tb);
 		special_case_i_tb = 0;
 		is_exp_odd_i_tb = 0;
-		invSqrt_i_tb = 1;
-		s_i_tb 		<= 8'b11111000;
+		invSqrt_i_tb = 0;
+		s_i_tb 		<= 8'b0000_0001;
 		doSqrt_i_tb <= 1'b1;
 
 		while (valid_o_tb == 0) @(posedge clk_tb);
