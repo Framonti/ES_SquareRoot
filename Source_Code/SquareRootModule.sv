@@ -33,14 +33,17 @@ module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, invSqrt_i, specia
 //						internal wires							//
 //////////////////////////////////////////////////////////////////
 
-    logic  [2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	b_tmp;             //32 bits
+    //logic  [2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	b_tmp;             //32 bits
+    logic  [3*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	b_tmp;             //48 bits
 	logic  [2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	y_tmp;             //32 bits
 	logic  [2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	x_tmp;             //32 bits
-	logic  [(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	    r_tmp;             //16 bits
+	//logic  [(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	    r_tmp;             //16 bits
+	logic  [2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0] 	r_tmp;             //32 bits
 	
 	logic  [(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0]       b_r, b_next;       //16 bits
 	logic  [(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0]		y_r, y_next;       //16 bits
-	logic  [(1+LAMP_FLOAT_F_DW)-1:0]                    r_r, r_next;       //8 bits  
+	//logic  [(1+LAMP_FLOAT_F_DW)-1:0]                    r_r, r_next;       //8 bits
+	logic  [(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0]       r_r, r_next;       //16 bits  
 	logic  [(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-1:0]       x_r, x_next;       //16 bits
 	logic                                               is_exp_odd_r, is_exp_odd_next;
 	logic                                               invSqrt_r, invSqrt_next;
@@ -92,10 +95,13 @@ module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, invSqrt_i, specia
 	begin
 		ss_next		=	ss;
 		
+		
+		//r_tmp 		= 	(THREE_17 - {1'b0, b_r}) >> 1;
+        //x_tmp       =   (x_r * r_r) << (1+LAMP_FLOAT_F_DW);        //shift of 8 bits
+        //y_tmp       =   (y_r * r_r) << (1+LAMP_FLOAT_F_DW);
 		b_tmp       =   b_r * (r_r ** 2);
-		r_tmp 		= 	(THREE_17 - {1'b0, b_r}) >> 1;
-		x_tmp       =   (x_r * r_r) << (1+LAMP_FLOAT_F_DW);        //shift of 8 bits
-		y_tmp       =   (y_r * r_r) << (1+LAMP_FLOAT_F_DW);
+		x_tmp       =   (x_r * r_r);        //shift of 8 bits
+		y_tmp       =   (y_r * r_r);
 		
 		b_next		      =	b_r;
 		y_next		      =	y_r;
@@ -119,9 +125,14 @@ module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, invSqrt_i, specia
                     begin
                         ss_next            =   SQRT_B;
                         b_next             =   s_i << (1+LAMP_FLOAT_F_DW);                     //8 bits shift
-                        r_next             =   (THREE_9 - {1'b0, s_i}) >> 1;
-                        y_next             =   r_next << (1+LAMP_FLOAT_F_DW);
-                        x_next		       =   ((s_i * r_next) << 1);   //first bit is always a 0 so we can remove it
+                        
+//                        r_next             =   (THREE_9 - {1'b0, s_i}) >> 1;
+//                        y_next             =   r_next << (1+LAMP_FLOAT_F_DW);
+//                        x_next               =   ((s_i * r_next) << 1);   //first bit is always a 0 so we can remove it
+                        r_next             =   (THREE_17 - (s_i << 8)) >> 1;
+                        y_next             =   r_next;
+                        x_tmp              =   s_i * r_next;
+                        x_next		       =   x_tmp >> 7;   //first bit is always a 0 so we can remove it
                         is_exp_odd_next    =   is_exp_odd_i;
                         invSqrt_next       =   invSqrt_i;
                     end
@@ -161,7 +172,8 @@ module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, invSqrt_i, specia
 			    end
 			    else
 			    begin
-                    b_next = b_tmp[(2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-3)-:(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)];  //first 2 bits are always 0 so we can remove them
+//			        b_next = b_tmp[(2*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-3)-:(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)];  //first 2 bits are always 0 so we can remove them
+                    b_next = b_tmp[(3*(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)-3)-:(1+LAMP_FLOAT_F_DW+LAMP_PREC_DW)];  //first 2 bits are always 0 so we can remove them
                                              
                     ss_next = SQRT_R;
 			    end
@@ -169,7 +181,8 @@ module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, invSqrt_i, specia
 			
 			SQRT_R:
             begin
-                r_next = r_tmp[(2*(1+LAMP_FLOAT_F_DW)-1)-:(1+LAMP_FLOAT_F_DW)];
+//                r_next = r_tmp[(2*(1+LAMP_FLOAT_F_DW)-1)-:(1+LAMP_FLOAT_F_DW)];
+                r_next = (THREE_17 - {1'b0, b_r}) >> 1;;
                 ss_next = SQRT_XY;
             end
             

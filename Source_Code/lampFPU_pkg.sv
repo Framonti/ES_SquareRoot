@@ -58,7 +58,8 @@ package lampFPU_pkg;
 	parameter INV_SQRT2    = 16'b0101101010000010;
 	parameter THREE_17     = 17'b11000000000000000;
 	parameter THREE_9      = 9'b110000000;
-	parameter APPROX_ONE   = 8'b10000000;
+	//parameter APPROX_ONE   = 8'b10000000;
+	parameter APPROX_ONE   = 16'b1000_0000_0000_0000;
 
 	typedef enum logic
 	{
