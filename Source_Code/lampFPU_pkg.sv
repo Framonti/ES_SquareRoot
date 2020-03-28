@@ -612,14 +612,16 @@ package lampFPU_pkg;
 
     function automatic logic[(LAMP_FLOAT_E_DW)-1:0] FUNC_calcExpSquareRoot(
         input [(LAMP_FLOAT_E_DW)-1:0]   exp,
-        input                           invSqrt
+        input                           invSqrt,
+        input                           isMantissaOne
     );
+        logic correction = isMantissaOne & exp[0];
         if (invSqrt)
         begin
             if (exp >= LAMP_FLOAT_E_BIAS)     //exp >= 127
-                return LAMP_FLOAT_E_BIAS - (exp - LAMP_FLOAT_E_BIAS >> 1) - 1;    //Es: exp = 133 (2^6) --> 127 - ((133 - 127) / 2) - 1 --> 127 - (6/2) - 1 --> 123 (2^-4)
+                return LAMP_FLOAT_E_BIAS - (exp - LAMP_FLOAT_E_BIAS >> 1) - 1 + correction;    //Es: exp = 133 (2^6) --> 127 - ((133 - 127) / 2) - 1 --> 127 - (6/2) - 1 --> 123 (2^-4)
             else
-                return LAMP_FLOAT_E_BIAS + (LAMP_FLOAT_E_BIAS - exp - 1 >> 1);    //Es: exp = 121 (2^-6) --> 127 + ((127 - 121 - 1) / 2) --> 127 + (5/2) --> 129 (2^2)
+                return LAMP_FLOAT_E_BIAS + (LAMP_FLOAT_E_BIAS - exp - 1 >> 1) + correction;    //Es: exp = 121 (2^-6) --> 127 + ((127 - 121 - 1) / 2) --> 127 + (5/2) --> 129 (2^2)
         end
         else
         begin

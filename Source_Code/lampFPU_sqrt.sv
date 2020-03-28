@@ -174,17 +174,17 @@ module lampFPU_sqrt(
         end
         else
         begin
-            e_res_next  = FUNC_calcExpSquareRoot( extExp_op_i, invSqrt_i );
+            e_res_next  = FUNC_calcExpSquareRoot( extExp_op_i, invSqrt_i, ~(|(extMant_op_i[LAMP_FLOAT_F_DW-1 : 0])));
             s_res_next  = 0;
             
-//            f_initial = srm_res;
-//            stickyBit = |f_initial[2+:3];
-//            f_res_next  = {1'b0, f_initial[(2*(1+LAMP_FLOAT_F_DW)-1) -:(1+1+LAMP_FLOAT_F_DW+3-1-1-1)], f_initial[(2*(1+LAMP_FLOAT_F_DW)-1) - (1+1+LAMP_FLOAT_F_DW+3-1-1)] | stickyBit, stickyBit};
-            
             f_initial = srm_res;
-            stickyBit = |f_initial[4:0];
-            f_res_next  = {1'b0, f_initial[(2*(1+LAMP_FLOAT_F_DW)-1) -:(1+1+LAMP_FLOAT_F_DW+3-1-1-1)], f_initial[(2*(1+LAMP_FLOAT_F_DW)-1) - (1+1+LAMP_FLOAT_F_DW+3-1-1)] | stickyBit, stickyBit};
+            stickyBit = |f_initial[2+:3];
+            f_res_next  = {1'b0, f_initial[(2*(1+LAMP_FLOAT_F_DW)-1) -:(1+1+LAMP_FLOAT_F_DW+3-1)]};   //, stickyBit};
             
+          //  f_initial = srm_res;
+          //  stickyBit = |f_initial[4:0];
+        //    f_res_next  = {1'b0, f_initial[(2*(1+LAMP_FLOAT_F_DW)-1) -:(1+1+LAMP_FLOAT_F_DW+3-1-1-1)], f_initial[(2*(1+LAMP_FLOAT_F_DW)-1) - (1+1+LAMP_FLOAT_F_DW+3-1-1)] | stickyBit, stickyBit};
+           // f_res_next = {1'b0, f_initial[(2*(1+LAMP_FLOAT_F_DW)-1) -:(1+1+LAMP_FLOAT_F_DW+3-1-1-1-1)], 3'b000};
         end
         
         isToRound_next  = ~isCheckNanInfValid;
