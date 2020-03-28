@@ -303,7 +303,7 @@ package lampFPU_pkg;
 				input [(1/*ovf*/+1/*hidden*/+LAMP_FLOAT_F_DW+3/*G,R,S*/)-1:0]		f_res_postNorm
 			);
 
-		localparam NUM_BIT_TO_RND	=	4;
+		localparam NUM_BIT_TO_RND	=	6;
 
 		logic 								isAddOne;
 		logic [(1+1+LAMP_FLOAT_F_DW+3)-1:0] tempF_1;
