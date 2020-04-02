@@ -54,18 +54,18 @@ lampFPU\_sqrt.sv takes as inputs the operand we want the square root of, already
 The sequential logic of  \emph{lampFPU\_sqrt.sv} resets to zero the module's internal wires and the outputs when the input \emph{rst} is 1. Otherwise, it saves some of the inputs into internal registers and updates the outputs.\\\\
 The combinational logic of \emph{lampFPU\_sqrt.sv} firstly checks if we're trying to compute the Square Root or Inverse Square Root of a special case, using the function \emph{FUNC\_calcInfNanZeroResSqrt}. In this case, the output doesn't need to be rounded. We have the following:
 \begin{itemize}
-\item $\sqrt{+0}$ = $+0$ 
-\item $\sqrt{-0}$ = $-0$
-\item $\sqrt{NaN}$ = NaN
-\item $\sqrt{+ \infty}$  =  $+\infty$
-\item $\sqrt{- \infty}$ =  NaN
-\item $\sqrt{- X}$ = NaN  (X is any generic number) 
-\item $\frac{1}{\sqrt{+0}}$ = NaN
-\item $\frac{1}{\sqrt{-0}}$ = NaN
-\item $\frac{1}{\sqrt{NaN}}$ = NaN (Inf???)
-\item $\frac{1}{\sqrt{+\infty}}$ = $+0$
-\item $\frac{1}{\sqrt{-\infty}}$ = NaN
-\item $\frac{1}{\sqrt{-X}}$ = NaN  (X is any generic number) 
+\item $\sqrt{+0} = +0$ 
+\item $\sqrt{-0} = -0$
+\item $\sqrt{NaN} = NaN$
+\item $\sqrt{+ \infty}  =  +\infty$
+\item $\sqrt{- \infty} =  NaN$
+\item $\sqrt{- X} = NaN$  (X is any positive number) 
+\item $\frac{1}{\sqrt{+0}} = NaN$
+\item $\frac{1}{\sqrt{-0}} = NaN$
+\item $\frac{1}{\sqrt{NaN}} = NaN$
+\item $\frac{1}{\sqrt{+\infty}} = +0$
+\item $\frac{1}{\sqrt{-\infty}} = NaN$
+\item $\frac{1}{\sqrt{-X}} = NaN$  (X is any positive number) 
 \end{itemize}
 
 If we are not in a special case, we compute the exponent and wait until the internal module computes the square root or inverse square root of the Mantissa (we uses  \emph{srm\_valid} for it) and then we return the final value as outputs. To note, the signal \emph{f\_res\_o} has a dimension of 12 bits, that are:
