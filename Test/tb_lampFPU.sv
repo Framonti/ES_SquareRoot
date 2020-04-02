@@ -275,7 +275,7 @@ module tb_lampFPU;
         int                               numTest;
         
         numTest  =  0;
-        repeat (5000)
+        repeat (100)
         begin
             @(posedge clk);
             numTest++;

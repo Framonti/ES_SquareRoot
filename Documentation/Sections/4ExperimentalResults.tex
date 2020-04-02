@@ -1,49 +1,24 @@
-In order to properly validate our implementation, we tested our design using a testbench; this testbench can generate random numbers, compute the results of our implementation and then compare them against the results of the C function \emph{sqrtf} (that can be found in \emph{math.h}).  \\
+\subsection{Test Setup}
+In order to properly validate our implementation, we tested our design using a test-bench; this test-bench can generate random numbers, compute the results of our implementation and then compare them against the results of the C function \emph{sqrtf} (that can be found in \emph{math.h}).  \\
 All the other functions and operations already developed for the FPU were tested this way, so we extended two existing files:
 \begin{itemize}
-\item dpi\_lampFPU.c is a C file; we added the functions \emph{DPI\_sqrt} and \emph{DPI\_invSqrt}. Given a value X, They return the value of $\sqrt{X}$ and $\frac{1}{\sqrt{X}}$.
+\item dpi\_lampFPU.c is a C file; we added the functions \emph{DPI\_sqrt} and \emph{DPI\_invSqrt}. Given a value X, They return the value of $\sqrt{X}$ and $\frac{1}{\sqrt{X}}$, as unsigned integer representing a number in binary32.
 \item tb\_lampFPU.sv is a SystemVerilog file; it instantiates the FPU, imports the C functions and compares their results with the ones produced by the top module. 
 \end{itemize}
 
 In order to test our implementation, we added two different tasks:
 \begin{itemize}
-\item \emph{TASK\_doSqrt\_op} actually performs the square root operation and .... %add
-\item \emph{TASK\_testSqrt} creates a loop, randomly generates values for the sign, the exponent and the mantissa, and calls  \emph{TASK\_doSqrt\_op}. It also manages all the special cases, creating a test for each of them. 
+\item \emph{TASK\_doSqrt\_op} takes as input the number X we want the square root of, calls the right C function defined in dpi\_lampFPU.c depending on the opcode, and saves the result. Then, the task rounds this result and compute $\sqrt{X}$ or $\frac{1}{\sqrt{X}}$ using our implementation. Then, the two results are compared. If they're the same, the test is passed, otherwise it fails. 
+\item \emph{TASK\_testSqrt} creates a loop with 5000 iterations; in each one, it randomly generates values for the sign, the exponent and the mantissa, and calls \emph{TASK\_doSqrt\_op}. It also manages all the special cases, explicitly creating a test for each of them. 
 \end{itemize}
 
-\begin{lstlisting}[language=Verilog]
-task TASK_testSqrt (input opcodeFPU_t opcode);
-	logic	   [LAMP_FLOAT_S_DW-1:0]   op1_sign;
-        logic    [LAMP_FLOAT_E_DW-1:0]    op1_exponent;
-        logic    [LAMP_FLOAT_F_DW-1:0]    op1_fraction;
-        int                              		    numTest;
-        
-        numTest  =  0;
-        repeat (100)
-        begin
-            @(posedge clk);
-            numTest++;
-            $display("Test-%d",numTest);
-            op1_sign        =    $urandom_range(0,1);
-            op1_exponent    =    $urandom_range(0,255);
-            op1_fraction    =    (op1_exponent>=0 && op1_exponent<255) ? $random : $urandom_range(0,1)<<22 /*inf or qnan*/;
-        
-            TASK_doSqrt_op (opcode, {op1_sign, op1_exponent, op1_fraction});
-        end
-        
-        TASK_doSqrt_op (opcode, PLUS_INF);
-        TASK_doSqrt_op (opcode, MINUS_INF);
-        TASK_doSqrt_op (opcode, PLUS_ZERO);
-        TASK_doSqrt_op (opcode, MINUS_ZERO);
-        TASK_doSqrt_op (opcode, PLUS_QNAN);
-        TASK_doSqrt_op (opcode, MINUS_QNAN);
-        TASK_doSqrt_op (opcode, PLUS_SNAN);
-        TASK_doSqrt_op (opcode, MINUS_SNAN);
-	endtask
-\end{lstlisting}
+\subsection{Results}
+We ran our test-bench using the software Vivado, performing a behavioural, post-synthesis and post-implementation simulation.\\
+The results completely validate our implementation; out of 5000 tests performed, we're able to correctly compute the square root of all of them, obtaining zero rejections. \\
+For the inverse square root, instead, we have a very small set of tests rejected (21 out of 5000, the 0,42\%); in all cases, our implementation returns the right exponent and sign, but has a mantissa one bit greater than expected. It problem probably lies in the rounding function, since the mantissa computed by our implementation is very close to the right value.  
 
 \subsection{Algorithm Efficiency}
-%add stuffs and some cool picture maybe
+In this section we show the efficiency of the algorithm for one randomly selected value. 
 
 
 

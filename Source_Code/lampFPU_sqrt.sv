@@ -90,7 +90,7 @@ module lampFPU_sqrt(
    //////////////////////////////////////////////////////////////////
    //      internal submodules      //
    //////////////////////////////////////////////////////////////////
-   SquareRootModule SquareRootModule0 (
+   lampFPU_fractSqrt lampFPU_fractSqrt0 (
      .clk               (clk),
      .rst               (rst),
      .doSqrt_i          (srm_doSqrt),

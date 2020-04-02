@@ -48,7 +48,7 @@ module SquareRootModule_tb;
 		$finish;
 	end
 
-	SquareRootModule #()
+	lampFPU_fractSqrt #()
 		sqrt0(	.clk            (clk_tb),
 				.rst            (rst_tb),
 				.doSqrt_i       (doSqrt_i_tb),

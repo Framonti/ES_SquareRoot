@@ -38,8 +38,8 @@ In both cases, the algorithm converges in 5 or 6 iterations. Given that we only 
 In this section we presented only a quick and high-level description of Goldschmidt's algorithm. Implementation details were not discussed, but they are quite important. For example:
 \begin{itemize}
 \item Goldschmidt's algoritmh is not self-correcting, meaning we can't fully trust the LSB.
-\item The values (significant included) are in the bfloat16 format, and must be consequently managed (e.g.: the value 3 used in the algorithm is represented as 9b'110000000).
-\item The full square root algorithm requires also to compute the final exponent.
+\item The values (significant included) are in the bfloat16 format, and must be consequently managed
+\item The full square root algorithm requires also to compute the final exponent and eventually round the result
 \end{itemize}
 These and other details are more widely discussed in the next section.
 \begin{figure}[h]

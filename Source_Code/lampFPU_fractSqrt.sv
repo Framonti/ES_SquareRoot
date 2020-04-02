@@ -1,19 +1,13 @@
 
 //////////////////////////////////////////////////////////////////////////////////
 // Create Date: 02/10/2020 09:49:53 AM
-// Module Name: SquareRootModule
+// Module Name: lampFPU_ftactSqrt
 // Project Name: ES_SquareRoot
-
 // Target: xc7a12tcpg238-3
-
-// Revision:
-// Revision 0.01 - Interface
-// Revision 0.02 - 
-// Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-module SquareRootModule(clk, rst, doSqrt_i, s_i, is_exp_odd_i, invSqrt_i, special_case_i, valid_o, res_o);
+module lampFPU_fractSqrt(clk, rst, doSqrt_i, s_i, is_exp_odd_i, invSqrt_i, special_case_i, valid_o, res_o);
 
     import lampFPU_pkg::*;
     
