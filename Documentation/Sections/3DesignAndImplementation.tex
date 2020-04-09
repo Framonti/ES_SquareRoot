@@ -25,13 +25,13 @@ $$ \sqrt{\frac{1}{2*M}} = \frac{1}{\sqrt{2} * \sqrt{M}} $$
 
 \subsection{lampFPU\_fractSqrt.sv}
 We firstly describe the lampFPU\_fractSqrt.sv module. \\
-In general, \emph{lampFPU\_fractSqrt.sv} takes as input an 8-bits Mantissa M between 1.0 (8b'100000000) and 1.9921875 (8b'11111111) and some flags indicating when to start the computation (\emph{doSqrt\_i}), whether to compute the square root or the inverse square root ({invSqrt\_i}), if we are in a special case (emph{special\_case\_i}).\\
+In general, \emph{lampFPU\_fractSqrt.sv} takes as input an 8-bits Mantissa M between 1.0 (8b'100000000) and 1.9921875 (8b'11111111) and some flags indicating when to start the computation (\emph{doSqrt\_i}), whether to compute the square root or the inverse square root ({invSqrt\_i}), if we are in a special case (\emph{special\_case\_i}).\\
 The module signals it finished its work with the output valid\_o, and returns 16 bits representing $\sqrt{M}$ or $\frac{1}{\sqrt{M}}$. The Mantissa length is greater than expected by the bfloat16 standard, but we'll use this enhanced precision in order to properly round the result when needed.\\\\
 The sequential logic of \emph{lampFPU\_fractSqrt.sv} implements a synchronous reset of the module, setting to zero all the internal wires if the input \emph{rst} is 1. Otherwise, it saves the values computed by the combinational logic into internal registers.\\\\
 The combinational logic of \emph{lampFPU\_fractSqrt.sv} implements a Finite State Machine with four different states:
 \begin{enumerate}
 \item Every times it starts, we compute the various values required by the algorithm, but we don't save them until we're in the right state.
-\item In the IDLE state, we initialize our internal variables as described in Section \ref{goldschmidt}, only if the external input \emph{doSqrt\_i} signals to start the computation and we're not in one of the special cases (Square Root of NaN, Square Root of Zero...). To note, we declare the number 3 as 9'b110000000; since our Significant occupies 8 bits and is between 1.0 and 1.9921875, in order to represent the number 3 we need to add an additional bit. 
+\item In the IDLE state, we initialize our internal variables as described in Section \ref{goldschmidt}, only if the external input \emph{doSqrt\_i} signals to start the computation and we're not in one of the special cases (Square Root of NaN, Square Root of Zero...). To note, we declare the number 3 as \texttt{17'b11000000000000000}; since our R occupies 16 bits and is between 1.0 and 1.999969482421875, in order to represent the number 3 we need to add an additional bit. 
 \item SQRT\_B is the output state; if $R_i$ is 1, we stop the computation, return the result (either the square root or the inverse square root) and signal the end by setting \emph{valid\_next} as 1. If the exponent of the bfloat16 we want the square root of is odd, we first multiply $X_i$ by $\sqrt{2}$ and $Y_i$ by $\frac{1}{\sqrt{2}}$. Goldschmidt's algorithm doesn't yeld a precise LSB, but we return x\_tmp or y\_tmp, which have more precision than our final result. We delegate the rounding to \emph{lampFPU\_top.sv}. \\
 On the other hand, if the estimation of the square root is not good enough, we perform another iteration of the algorithm, by updating \emph{b\_next} and moving to the next state.
 \item In the SQRT\_R state, we update $R_i$ as requested by the algorithm.
@@ -43,7 +43,7 @@ We now describe the lampFPU\_sqrt.sv module.\\
 In general, \emph{lampFPU\_sqrt.sv} module instantiates \emph{lampFPU\_fractSqrt.sv}, computes the final exponent and manages some special cases. \\ 
 The square root is a particular operation, since it can't produce neither an overflow nor an underflow. They occur when positive numbers exceed the maximum value or negative numbers exceed the maximum negative value that can be represented. For the square root, we have that:
 \begin{itemize}
-\item If $X > 1$, then $X > \sqrt{X} > 1$ 
+\item If $X > 1$, then $1 < \sqrt{X} < X$ 
 \item If $0 < X < 1$, then $0 < X < \sqrt{X} < 1$
 \item If $X < 0$, then $\sqrt{X}$ is NaN
 \end{itemize}
@@ -51,7 +51,7 @@ This means that if X is a number that can be represented in bfloat16, its square
 % add why don't need normalization
 %add module interface%
 lampFPU\_sqrt.sv takes as inputs the operand we want the square root of, already divided in signum, exponent and mantissa. Some flags states whether the input is NaN, Zero or Infinity. The module returns the square root of the inputs, still split in signum, exponent and mantissa, as well as a flag signaling if the result needs to be rounded.\\\\
-The sequential logic of  \emph{lampFPU\_sqrt.sv} resets to zero the module's internal wires and the outputs when the input \emph{rst} is 1. Otherwise, it saves some of the inputs into internal registers and updates the outputs.\\\\
+The sequential logic of \emph{lampFPU\_sqrt.sv} resets to zero the module's internal wires and the outputs when the input \emph{rst} is 1. Otherwise, it saves some of the inputs into internal registers and updates the outputs.\\\\
 The combinational logic of \emph{lampFPU\_sqrt.sv} firstly checks if we're trying to compute the Square Root or Inverse Square Root of a special case, using the function \emph{FUNC\_calcInfNanZeroResSqrt}. In this case, the output doesn't need to be rounded. We have the following:
 \begin{itemize}
 \item $\sqrt{+0} = +0$ 
@@ -70,17 +70,18 @@ The combinational logic of \emph{lampFPU\_sqrt.sv} firstly checks if we're tryin
 
 If we are not in a special case, we compute the exponent and wait until the internal module computes the square root or inverse square root of the Mantissa (we uses  \emph{srm\_valid} for it) and then we return the final value as outputs. To note, the signal \emph{f\_res\_o} has a dimension of 12 bits, that are:
 \begin{itemize}
-\item The MSB is the overflow bit; as discussed before, this bit will always be zero
-\item Bits from 10\textsuperscript{th} to 3\textsuperscript{th} represent the "real" mantissa, as expected by bfloat16 standard.
-\item The Ground bit is the bit immediately on the left of the Mantissa LSB, so it's the 2\textsuperscript{th} bit of \emph{f\_res\_o}.
-\item The Round bit is on the left of the Ground bit, so it's the 1\textsuperscript{rd} bit of \emph{f\_res\_o}.
-\item The Sticky bit is computed as the logical or of three bits of \emph{f\_initial} (which has 16 bits of precision), and is the LSB of \emph{f\_res\_o} . 
+\item The MSB is the overflow bit; as discussed before, this bit will always be zero;
+\item Bits from 10\textsuperscript{th} to 3\textsuperscript{rd} represent the "real" mantissa, as expected by bfloat16 standard;
+\item The Ground bit is the bit immediately on the right of the Mantissa LSB, so it's the 2\textsuperscript{nd} bit of \emph{f\_res\_o};
+\item The Round bit is on the right of the Ground bit, so it's the 1\textsuperscript{st} bit of \emph{f\_res\_o};
+\item The Sticky bit is computed as the logical OR of 3 bits of \emph{f\_initial} (which has 16 bits of precision), and is the LSB (the 0\textsuperscript{th} bit) of \emph{f\_res\_o}. 
 \end{itemize}
 These additional bits are used for rounding, which is delegated to the top module; we inform the top module with the signal \emph{isToRound}. The rounding is performed using the function \emph{FUNC\_rndToNearestEven} which implements the following rules:
 \begin{itemize}
-\item If GRS = 0XX, then round down
-\item If GRS = 100, then round up if mantissa LSB is 1, otherwise round down
-\item Any other case, round up
+\item If GRS = 00X, then round down
+\item If GRS = 01X, then round up if sticky bit is 1, round down otherwise
+\item If GRS = 10X, then round up
+\item If GRS = 11X, then round up and add 1
 \end{itemize} 
 
 \clearpage

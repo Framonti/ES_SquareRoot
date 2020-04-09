@@ -1,7 +1,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////
 // Create Date: 02/10/2020 09:49:53 AM
-// Module Name: lampFPU_ftactSqrt
+// Module Name: lampFPU_fractSqrt
 // Project Name: ES_SquareRoot
 // Target: xc7a12tcpg238-3
 // 

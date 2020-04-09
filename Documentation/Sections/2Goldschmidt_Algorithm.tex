@@ -8,7 +8,7 @@ $$ X_{n} = S * R_0*R_1* ... * R_n \approx \sqrt{S} $$
 And the Inverse Square Root as:
 $$ Y_n =   R_0*R_1* ... * R_n \approx  \frac{1}{\sqrt{S}}$$
 \\
-Goldschmidt's algorithm initializes its variables as follow:
+Goldschmidt's algorithm initializes its variables as follows:
 
 \begin{itemize}
 \item $B_0$ = S
@@ -23,7 +23,7 @@ Goldschmidt's algorithm initializes its variables as follow:
 \item $R_i$ = $\frac{3-B_i}{2}$
 \end{enumerate}
 
-\noindent And subsequently it updates the Square Root and the Reciprocal Square Root approximations as follows:
+\noindent And subsequently it updates the Square Root and the Inverse Square Root approximations as follows:
 \begin{enumerate}
 \item $X_i$ = $X_{i-1}$ * $R_i$
 \item $Y_i$ = $Y_{i-1}$ * $R_i$
