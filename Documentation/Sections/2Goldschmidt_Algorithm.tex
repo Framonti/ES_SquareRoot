@@ -32,7 +32,7 @@ Goldschmidt's algorithm initializes its variables as follows:
 \noindent Iterations stop when R reaches a good approximation of 1.\\
 
 We wanted to show that the Goldschmidt's algorithm is very efficient, as it requires only a very small number of iterations to reach the desired precision. To do so, we quickly implemented the algorithm in Matlab and tracked the values of $B_i$, $R_i$, $Y_i$ and $X_i$ for ten iterations.\\ The code (\ref{fig:Matlab_Algorithm}) is simply the software implementation of the algorithm, and we run it twice; the first time, we put $S$ = 1,5625, which yelds an exact Square Root (\ref{fig:S_15625}).  The second time, we used $S$ = 1,5, which instead yelds an irrational number as solution (\ref{fig:S_15}).\\
-In both cases, the algorithm converges in 5 or 6 iterations. Given that we only use 8 bits for the Mantissa, and not 24 like Matlab, we'll reach the desired precision in even fewer iterations.
+In both cases, the algorithm converges in 5 or 6 iterations. Given that we only use 16 bits for the Mantissa, and not 24 like Matlab, we'll reach the desired precision in even fewer iterations.
 
 \subsection{Additional notes}
 In this section we presented only a quick and high-level description of Goldschmidt's algorithm. Implementation details were not discussed, but they are quite important. For example:
