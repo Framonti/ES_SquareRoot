@@ -41,20 +41,20 @@ module lampFPU_sqrt(
     input   clk;
     input   rst;
     
-    input                              doSqrt_i;
-    input                              invSqrt_i;
-    input   [LAMP_FLOAT_S_DW-1:0]	   signum_op_i;     // The operand signum (1 bit)
-    input   [(LAMP_FLOAT_E_DW)-1:0]    extExp_op_i;     
-    input   [(1+LAMP_FLOAT_F_DW)-1:0]  extMant_op_i;    // The extended mantissa (8 bits)
-    input                              isInf_op_i;                             
-    input                              isZero_op_i;
-    input                              isQNAN_op_i;
-    input                              isSNAN_op_i;
+    input                                   doSqrt_i;
+    input                                   invSqrt_i;
+    input   [LAMP_FLOAT_S_DW-1:0]	        signum_op_i;      // The operand signum (1 bit)
+    input   [(LAMP_FLOAT_E_DW)-1:0]         extExp_op_i;     
+    input   [(1+LAMP_FLOAT_F_DW)-1:0]       extMant_op_i;     // The extended mantissa (8 bits)
+    input                                   isInf_op_i;                             
+    input                                   isZero_op_i;
+    input                                   isQNAN_op_i;
+    input                                   isSNAN_op_i;
     
     output logic                            valid_o;
-    output logic                            s_res_o;           // resulting sign (1 bit)
-    output logic [LAMP_FLOAT_E_DW-1:0]	    e_res_o;           // resulting exponent (8 bits)
-    output logic [LAMP_FLOAT_F_DW+5-1:0]    f_res_o;           // resulting significand (12 bits)
+    output logic                            s_res_o;          // resulting sign (1 bit)
+    output logic [LAMP_FLOAT_E_DW-1:0]	    e_res_o;          // resulting exponent (8 bits)
+    output logic [LAMP_FLOAT_F_DW+5-1:0]    f_res_o;          // resulting significand (12 bits)
     output logic                            isToRound_o;
    
    
@@ -161,17 +161,11 @@ module lampFPU_sqrt(
                 );
         
         unique if (isZeroRes)
-        begin
-            {s_res_next, e_res_next, f_res_next}    = {isCheckSignRes, ZERO_E_F[14:7], ZERO_E_F[6:0], 5'b00000};
-        end
+            {s_res_next, e_res_next, f_res_next}    =   {isCheckSignRes, ZERO_E_F[14:7], ZERO_E_F[6:0], 5'b00000};
         else if (isCheckInfRes)
-        begin
-            {s_res_next, e_res_next, f_res_next}    = {isCheckSignRes, INF_E_F[14:7], INF_E_F[6:0], 5'b00000};
-        end
+            {s_res_next, e_res_next, f_res_next}    =   {isCheckSignRes, INF_E_F[14:7],  INF_E_F[6:0],  5'b00000};
         else if (isCheckNanRes)
-        begin
-            {s_res_next, e_res_next, f_res_next}    = {isCheckSignRes, QNAN_E_F[14:7], QNAN_E_F[6:0], 5'b00000};
-        end
+            {s_res_next, e_res_next, f_res_next}    =   {isCheckSignRes, QNAN_E_F[14:7], QNAN_E_F[6:0], 5'b00000};
         else
         begin
             e_res_next  = FUNC_calcExpSquareRoot( extExp_op_i, invSqrt_i, ~(|(extMant_op_i[LAMP_FLOAT_F_DW-1 : 0])));
@@ -180,11 +174,6 @@ module lampFPU_sqrt(
             f_initial = srm_res;
             stickyBit = |f_initial[2+:3];
             f_res_next  = {1'b0, f_initial[(2*(1+LAMP_FLOAT_F_DW)-1) -:(1+1+LAMP_FLOAT_F_DW+3-1-1)], stickyBit};
-            
-//            f_initial = srm_res;
-//            stickyBit = |f_initial[4:0];
-//            f_res_next  = {1'b0, f_initial[(2*(1+LAMP_FLOAT_F_DW)-1) -:(1+1+LAMP_FLOAT_F_DW+3-1-1-1)], f_initial[(2*(1+LAMP_FLOAT_F_DW)-1) - (1+1+LAMP_FLOAT_F_DW+3-1-1)] | stickyBit, stickyBit};
-           // f_res_next = {1'b0, f_initial[(2*(1+LAMP_FLOAT_F_DW)-1) -:(1+1+LAMP_FLOAT_F_DW+3-1-1-1-1)], 3'b000};
         end
         
         isToRound_next  = ~isCheckNanInfValid;

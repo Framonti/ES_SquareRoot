@@ -23,192 +23,192 @@ module lampFPU_top (
 
 import lampFPU_pkg::*;
 
-input									clk;
-input									rst;
-input									flush_i;	// Flush the FPU invalidating the current operation
-input									padv_i;		// Pipeline advance signal: accept new operation
-input	opcodeFPU_t						opcode_i;
-input	rndModeFPU_t					rndMode_i;
-input			[LAMP_INTEGER_DW-1:0]	op1_i;
-input			[LAMP_FLOAT_DW-1:0]		op2_i;
+input									     clk;
+input									     rst;
+input									     flush_i;	// Flush the FPU invalidating the current operation
+input									     padv_i;		// Pipeline advance signal: accept new operation
+input	        opcodeFPU_t				     opcode_i;
+input	        rndModeFPU_t			     rndMode_i;
+input			[LAMP_INTEGER_DW-1:0]	     op1_i;
+input			[LAMP_FLOAT_DW-1:0]		     op2_i;
 
-output	logic	[LAMP_INTEGER_DW-1:0]	result_o;
-output	logic							isResultValid_o;
-output	logic							isReady_o;
+output	logic	[LAMP_INTEGER_DW-1:0]	     result_o;
+output	logic							     isResultValid_o;
+output	logic							     isReady_o;
 
 // INPUT wires: to drive registered input
-	logic 									flush_r, flush_r_next;
-	opcodeFPU_t								opcode_r, opcode_r_next;
-	rndModeFPU_t							rndMode_r, rndMode_r_next;
-	logic	[LAMP_INTEGER_DW-1:0]			op1_r, op1_r_next;
+    opcodeFPU_t								 opcode_r, opcode_r_next;
+	rndModeFPU_t							 rndMode_r, rndMode_r_next;
+	logic 									 flush_r, flush_r_next;
+	logic	[LAMP_INTEGER_DW-1:0]			 op1_r, op1_r_next;
 
 // OUTPUT wires: to drive registered output
-	logic	[LAMP_INTEGER_DW-1:0]			result_o_next;
-	logic									isResultValid_o_next;
-	logic									fpcsr_o_next;
+	logic	[LAMP_INTEGER_DW-1:0]			 result_o_next;
+	logic									 isResultValid_o_next;
+	logic									 fpcsr_o_next;
 
 	//	add/sub outputs
-	logic									addsub_s_res;
-	logic	[LAMP_FLOAT_E_DW-1:0]			addsub_e_res;
-	logic	[LAMP_FLOAT_F_DW+5-1:0]			addsub_f_res;
-	logic									addsub_valid;
-	logic									addsub_isOverflow;
-	logic									addsub_isUnderflow;
-	logic									addsub_isToRound;
+	logic									 addsub_s_res;
+	logic	[LAMP_FLOAT_E_DW-1:0]			 addsub_e_res;
+	logic	[LAMP_FLOAT_F_DW+5-1:0]			 addsub_f_res;
+	logic									 addsub_valid;
+	logic									 addsub_isOverflow;
+	logic									 addsub_isUnderflow;
+	logic									 addsub_isToRound;
 
 	//	mul outputs
-	logic									mul_s_res;
-	logic	[LAMP_FLOAT_E_DW-1:0]			mul_e_res;
-	logic	[LAMP_FLOAT_F_DW+5-1:0]			mul_f_res;
-	logic									mul_valid;
-	logic									mul_isOverflow;
-	logic									mul_isUnderflow;
-	logic									mul_isToRound;
+	logic									 mul_s_res;
+	logic	[LAMP_FLOAT_E_DW-1:0]			 mul_e_res;
+	logic	[LAMP_FLOAT_F_DW+5-1:0]			 mul_f_res;
+	logic									 mul_valid;
+	logic									 mul_isOverflow;
+	logic									 mul_isUnderflow;
+	logic									 mul_isToRound;
 
 	//	div outputs
-	logic									div_s_res;
-	logic	[LAMP_FLOAT_E_DW-1:0]			div_e_res;
-	logic	[LAMP_FLOAT_F_DW+5-1:0]			div_f_res;
-	logic									div_valid;
-	logic									div_isOverflow;
-	logic									div_isUnderflow;
-	logic									div_isToRound;
+	logic									 div_s_res;
+	logic	[LAMP_FLOAT_E_DW-1:0]			 div_e_res;
+	logic	[LAMP_FLOAT_F_DW+5-1:0]			 div_f_res;
+	logic									 div_valid;
+	logic									 div_isOverflow;
+	logic									 div_isUnderflow;
+	logic									 div_isToRound;
 
 	//	f2i outputs
-	logic									f2i_s_res;
-	logic	[(LAMP_INTEGER_DW+3)-1:0] 		f2i_f_res;
-	logic									f2i_valid;
-	logic									f2i_isOverflow;
-	logic									f2i_isUnderflow;
-	logic									f2i_isSNaN;
+	logic									 f2i_s_res;
+	logic	[(LAMP_INTEGER_DW+3)-1:0] 		 f2i_f_res;
+	logic									 f2i_valid;
+	logic									 f2i_isOverflow;
+	logic									 f2i_isUnderflow;
+	logic									 f2i_isSNaN;
 
 	//	i2f outputs
-	logic									i2f_s_res;
-	logic	[LAMP_FLOAT_E_DW-1:0]			i2f_e_res;
-	logic	[LAMP_FLOAT_F_DW+5-1:0]			i2f_f_res;
-	logic									i2f_valid;
-	logic									i2f_isOverflow;
-	logic									i2f_isUnderflow;
-	logic									i2f_isToRound;
+	logic									 i2f_s_res;
+	logic	[LAMP_FLOAT_E_DW-1:0]			 i2f_e_res;
+	logic	[LAMP_FLOAT_F_DW+5-1:0]			 i2f_f_res;
+	logic									 i2f_valid;
+	logic									 i2f_isOverflow;
+	logic									 i2f_isUnderflow;
+	logic									 i2f_isToRound;
 
 	//	cmp outputs
-	logic									cmp_res;
-	logic									cmp_isResValid;
-	logic									cmp_isCmpInvalid;
+	logic									 cmp_res;
+	logic									 cmp_isResValid;
+	logic									 cmp_isCmpInvalid;
 	
 	//  sqrt & 1/sqrt outputs
-	logic                                   sqrt_s_res;
-	logic   [LAMP_FLOAT_E_DW-1:0]           sqrt_e_res;
-	logic   [LAMP_FLOAT_F_DW+5-1:0]         sqrt_f_res;
-	logic                                   sqrt_valid;
-	logic                                   sqrt_isToRound;
+	logic                                    sqrt_s_res;
+	logic   [LAMP_FLOAT_E_DW-1:0]            sqrt_e_res;
+	logic   [LAMP_FLOAT_F_DW+5-1:0]          sqrt_f_res;
+	logic                                    sqrt_valid;
+	logic                                    sqrt_isToRound;
 
-	logic	[LAMP_FLOAT_DW-1:0]				i2f_res;
-	logic									i2f_isResValid;
-	logic									i2f_isResInexact;
-	logic	[LAMP_INTEGER_DW-1:0]			f2i_res;
-	logic									f2i_isResValid;
-	logic									f2i_isResSNaN;
-	logic									f2i_isResZero;
-	logic									f2i_isResInexact;
-	logic									f2i_isResInvalid;
+	logic	[LAMP_FLOAT_DW-1:0]				 i2f_res;
+	logic									 i2f_isResValid;
+	logic									 i2f_isResInexact;
+	logic	[LAMP_INTEGER_DW-1:0]			 f2i_res;
+	logic									 f2i_isResValid;
+	logic									 f2i_isResSNaN;
+	logic									 f2i_isResZero;
+	logic									 f2i_isResInexact;
+	logic									 f2i_isResInvalid;
 
-	logic									doAddSub_r, doAddSub_r_next;
-	logic									isOpSub_r, isOpSub_r_next;
-	logic									doMul_r, doMul_next;
-	logic									doDiv_r, doDiv_next;
-	logic									doF2i_r, doF2i_next;
-	logic									doI2f_r, doI2f_next;
-	logic									doCmpEq_r, doCmpEq_next;
-	logic									doCmpLt_r, doCmpLt_next;
-	logic									doCmpLe_r, doCmpLe_next;
-	logic                                   doSqrt_r, doSqrt_next;
-	logic                                   invSqrt_r, invSqrt_next;
+	logic									 doAddSub_r, doAddSub_r_next;
+	logic									 isOpSub_r, isOpSub_r_next;
+	logic									 doMul_r, doMul_next;
+	logic									 doDiv_r, doDiv_next;
+	logic									 doF2i_r, doF2i_next;
+	logic									 doI2f_r, doI2f_next;
+	logic									 doCmpEq_r, doCmpEq_next;
+	logic									 doCmpLt_r, doCmpLt_next;
+	logic									 doCmpLe_r, doCmpLe_next;
+	logic                                    doSqrt_r, doSqrt_next;
+	logic                                    invSqrt_r, invSqrt_next;
 
 	// FUs results and valid bits
-	logic	[LAMP_INTEGER_DW-1:0]			res;
-	logic									isResValid;
+	logic	[LAMP_INTEGER_DW-1:0]			 res;
+	logic									 isResValid;
 
-	logic	[LAMP_FLOAT_S_DW-1:0] 			s_op1_r;
-	logic	[LAMP_FLOAT_E_DW-1:0] 			e_op1_r;
-	logic	[LAMP_FLOAT_F_DW-1:0] 			f_op1_r;
-	logic	[(LAMP_FLOAT_F_DW+1)-1:0] 		extF_op1_r;
-	logic	[(LAMP_FLOAT_E_DW+1)-1:0] 		extE_op1_r;
-	logic									isInf_op1_r;
-	logic									isZ_op1_r;
-	logic									isSNAN_op1_r;
-	logic									isQNAN_op1_r;
-	logic	[LAMP_FLOAT_S_DW-1:0] 			s_op2_r;
-	logic	[LAMP_FLOAT_E_DW-1:0] 			e_op2_r;
-	logic	[LAMP_FLOAT_F_DW-1:0] 			f_op2_r;
-	logic	[(LAMP_FLOAT_F_DW+1)-1:0] 		extF_op2_r;
-	logic	[(LAMP_FLOAT_E_DW+1)-1:0] 		extE_op2_r;
-	logic									isInf_op2_r;
-	logic									isZ_op2_r;
-	logic									isSNAN_op2_r;
-	logic									isQNAN_op2_r;
+	logic	[LAMP_FLOAT_S_DW-1:0] 			 s_op1_r;
+	logic	[LAMP_FLOAT_E_DW-1:0] 			 e_op1_r;
+	logic	[LAMP_FLOAT_F_DW-1:0] 			 f_op1_r;
+	logic	[(LAMP_FLOAT_F_DW+1)-1:0] 		 extF_op1_r;
+	logic	[(LAMP_FLOAT_E_DW+1)-1:0] 		 extE_op1_r;
+	logic									 isInf_op1_r;
+	logic									 isZ_op1_r;
+	logic									 isSNAN_op1_r;
+	logic									 isQNAN_op1_r;
+	logic	[LAMP_FLOAT_S_DW-1:0] 		     s_op2_r;
+	logic	[LAMP_FLOAT_E_DW-1:0] 			 e_op2_r;
+	logic	[LAMP_FLOAT_F_DW-1:0] 			 f_op2_r;
+	logic	[(LAMP_FLOAT_F_DW+1)-1:0] 		 extF_op2_r;
+	logic	[(LAMP_FLOAT_E_DW+1)-1:0] 		 extE_op2_r;
+	logic									 isInf_op2_r;
+	logic									 isZ_op2_r;
+	logic									 isSNAN_op2_r;
+	logic									 isQNAN_op2_r;
 	//	add/sub only
-	logic									op1_GT_op2_r;
-	logic	[LAMP_FLOAT_E_DW+1-1 : 0] 		e_diff_r;
+	logic									 op1_GT_op2_r;
+	logic	[LAMP_FLOAT_E_DW+1-1 : 0] 		 e_diff_r;
 	//	mul/div only
-	logic	[(1+LAMP_FLOAT_F_DW)-1:0] 		extShF_op1_r;
-	logic	[$clog2(1+LAMP_FLOAT_F_DW)-1:0]	nlz_op1_r;
-	logic	[(1+LAMP_FLOAT_F_DW)-1:0] 		extShF_op2_r;
-	logic	[$clog2(1+LAMP_FLOAT_F_DW)-1:0]	nlz_op2_r;
+	logic	[(1+LAMP_FLOAT_F_DW)-1:0] 		 extShF_op1_r;
+	logic	[$clog2(1+LAMP_FLOAT_F_DW)-1:0]	 nlz_op1_r;
+	logic	[(1+LAMP_FLOAT_F_DW)-1:0] 		 extShF_op2_r;
+	logic	[$clog2(1+LAMP_FLOAT_F_DW)-1:0]	 nlz_op2_r;
 
 	//	pre-operation wires/regs
-	logic	[LAMP_FLOAT_S_DW-1:0] 			s_op1_wire;
-	logic	[LAMP_FLOAT_E_DW-1:0] 			e_op1_wire;
-	logic	[LAMP_FLOAT_F_DW-1:0] 			f_op1_wire;
-	logic	[(LAMP_FLOAT_F_DW+1)-1:0] 		extF_op1_wire;
-	logic	[(LAMP_FLOAT_E_DW+1)-1:0] 		extE_op1_wire;
-	logic									isDN_op1_wire;
-	logic									isZ_op1_wire;
-	logic									isInf_op1_wire;
-	logic									isSNAN_op1_wire;
-	logic									isQNAN_op1_wire;
-	logic	[LAMP_FLOAT_S_DW-1:0] 			s_op2_wire;
-	logic	[LAMP_FLOAT_E_DW-1:0] 			e_op2_wire;
-	logic	[LAMP_FLOAT_F_DW-1:0] 			f_op2_wire;
-	logic	[(LAMP_FLOAT_F_DW+1)-1:0] 		extF_op2_wire;
-	logic	[(LAMP_FLOAT_E_DW+1)-1:0] 		extE_op2_wire;
-	logic									isDN_op2_wire;
-	logic									isZ_op2_wire;
-	logic									isInf_op2_wire;
-	logic									isSNAN_op2_wire;
-	logic									isQNAN_op2_wire;
+	logic	[LAMP_FLOAT_S_DW-1:0] 			 s_op1_wire;
+	logic	[LAMP_FLOAT_E_DW-1:0] 			 e_op1_wire;
+	logic	[LAMP_FLOAT_F_DW-1:0] 			 f_op1_wire;
+	logic	[(LAMP_FLOAT_F_DW+1)-1:0] 		 extF_op1_wire;
+	logic	[(LAMP_FLOAT_E_DW+1)-1:0] 		 extE_op1_wire;
+	logic									 isDN_op1_wire;
+	logic									 isZ_op1_wire;
+	logic									 isInf_op1_wire;
+	logic									 isSNAN_op1_wire;
+	logic									 isQNAN_op1_wire;
+	logic	[LAMP_FLOAT_S_DW-1:0] 			 s_op2_wire;
+	logic	[LAMP_FLOAT_E_DW-1:0] 			 e_op2_wire;
+	logic	[LAMP_FLOAT_F_DW-1:0] 			 f_op2_wire;
+	logic	[(LAMP_FLOAT_F_DW+1)-1:0] 		 extF_op2_wire;
+	logic	[(LAMP_FLOAT_E_DW+1)-1:0] 		 extE_op2_wire;
+	logic									 isDN_op2_wire;
+	logic									 isZ_op2_wire;
+	logic									 isInf_op2_wire;
+	logic									 isSNAN_op2_wire;
+	logic									 isQNAN_op2_wire;
 	//	add/sub only
-	logic									op1_GT_op2_wire;
-	logic	[LAMP_FLOAT_E_DW+1-1 : 0] 		e_diff_wire;
+	logic									 op1_GT_op2_wire;
+	logic	[LAMP_FLOAT_E_DW+1-1 : 0] 		 e_diff_wire;
 	//	mul/div only
-	logic	[(1+LAMP_FLOAT_F_DW)-1:0] 		extShF_op1_wire;
-	logic	[$clog2(1+LAMP_FLOAT_F_DW)-1:0]	nlz_op1_wire;
-	logic	[(1+LAMP_FLOAT_F_DW)-1:0] 		extShF_op2_wire;
-	logic	[$clog2(1+LAMP_FLOAT_F_DW)-1:0]	nlz_op2_wire;
+	logic	[(1+LAMP_FLOAT_F_DW)-1:0] 		 extShF_op1_wire;
+	logic	[$clog2(1+LAMP_FLOAT_F_DW)-1:0]	 nlz_op1_wire;
+	logic	[(1+LAMP_FLOAT_F_DW)-1:0] 		 extShF_op2_wire;
+	logic	[$clog2(1+LAMP_FLOAT_F_DW)-1:0]	 nlz_op2_wire;
 
 	//	pre-rounding wires/regs
-	logic									s_res;
-	logic	[LAMP_FLOAT_E_DW-1:0]			e_res;
-	logic	[LAMP_FLOAT_F_DW+5-1:0]			f_res;
-	logic									isOverflow;
-	logic									isUnderflow;
-	logic									isToRound;
+	logic									 s_res;
+	logic	[LAMP_FLOAT_E_DW-1:0]			 e_res;
+	logic	[LAMP_FLOAT_F_DW+5-1:0]			 f_res;
+	logic									 isOverflow;
+	logic									 isUnderflow;
+	logic									 isToRound;
 
 	// post-rounding wires/regs
-	logic									s_res_postRnd;
-	logic	[LAMP_FLOAT_F_DW-1:0]			f_res_postRnd;
-	logic	[LAMP_FLOAT_E_DW-1:0]			e_res_postRnd;
-	logic	[LAMP_INTEGER_DW-1:0]			res_postRnd;
-	logic									isOverflow_postRnd;
-	logic									isUnderflow_postRnd;
+	logic									 s_res_postRnd;
+	logic	[LAMP_FLOAT_F_DW-1:0]			 f_res_postRnd;
+	logic	[LAMP_FLOAT_E_DW-1:0]			 e_res_postRnd;
+	logic	[LAMP_INTEGER_DW-1:0]			 res_postRnd;
+	logic									 isOverflow_postRnd;
+	logic									 isUnderflow_postRnd;
 
 	// integer post-rounding wires/regs
-	logic									f2i_s_res_postRnd;
-	logic	[LAMP_INTEGER_DW-1:0]			f2i_f_res_postRnd;
-	logic	[LAMP_INTEGER_DW-1:0]			f2i_res_postRnd;
-	logic									f2i_isOverflow_postRnd;
-	logic									f2i_isUnderflow_postRnd;
-	logic									f2i_isInvalid_postRnd;
+	logic									 f2i_s_res_postRnd;
+	logic	[LAMP_INTEGER_DW-1:0]			 f2i_f_res_postRnd;
+	logic	[LAMP_INTEGER_DW-1:0]			 f2i_res_postRnd;
+	logic									 f2i_isOverflow_postRnd;
+	logic									 f2i_isUnderflow_postRnd;
+	logic									 f2i_isInvalid_postRnd;
 
 //////////////////////////////////////////////////////////////////
 // 							state enum							//

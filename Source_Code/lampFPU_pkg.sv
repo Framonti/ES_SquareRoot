@@ -54,12 +54,13 @@ package lampFPU_pkg;
 	parameter LAMP_APPROX_MULS	=	$clog2 ((LAMP_FLOAT_DW+1)/LAMP_APPROX_DW);
 	
 	// sqrt-only
-	parameter SQRT2        = 16'b1011010100000101;
-	parameter INV_SQRT2    = 16'b0101101010000010;
-	parameter THREE_17     = 17'b11000000000000000;
-	parameter THREE_9      = 9'b110000000;
-	//parameter APPROX_ONE   = 8'b10000000;
-	parameter APPROX_ONE   = 16'b1000_0000_0000_0000;
+	parameter [LAMP_FLOAT_F_DW+LAMP_PREC_DW-1:0]       EXCEEDING_ZEROS = '0;
+    
+    parameter SQRT2             =   16'b1011010100000101;
+    parameter INV_SQRT2         =   16'b0101101010000010;
+    parameter ONE               =   {1'b1,  EXCEEDING_ZEROS};
+    parameter THREE             =   {2'b11, EXCEEDING_ZEROS};
+    
 
 	typedef enum logic
 	{
@@ -585,24 +586,24 @@ package lampFPU_pkg;
        else
        begin
            case({invSqrt_i, n_leading_zeros_i})
-               4'b0_000: begin corrector = APPROX_ONE;          shift = 2;  end
-               4'b1_000: begin corrector = APPROX_ONE;          shift = 3;  end
+               4'b0_000: begin corrector = ONE;          shift = 2;  end
+               4'b1_000: begin corrector = ONE;          shift = 3;  end
                
                4'b0_001: begin corrector = INV_SQRT2;           shift = 3;  end
-               4'b0_010: begin corrector = APPROX_ONE   >> 1;   shift = 3;  end
+               4'b0_010: begin corrector = ONE   >> 1;          shift = 3;  end
                4'b0_011: begin corrector = INV_SQRT2    >> 1;   shift = 4;  end
-               4'b0_100: begin corrector = APPROX_ONE   >> 2;   shift = 4;  end
+               4'b0_100: begin corrector = ONE   >> 2;          shift = 4;  end
                4'b0_101: begin corrector = INV_SQRT2    >> 2;   shift = 5;  end
-               4'b0_110: begin corrector = APPROX_ONE   >> 3;   shift = 5;  end
+               4'b0_110: begin corrector = ONE   >> 3;          shift = 5;  end
                4'b0_111: begin corrector = INV_SQRT2    >> 3;   shift = 6;  end
                
-               4'b1_000: begin corrector = APPROX_ONE;          shift = 3;  end
+               4'b1_000: begin corrector = ONE;                 shift = 3;  end
                4'b1_001: begin corrector = SQRT2;               shift = 2;  end
-               4'b1_010: begin corrector = APPROX_ONE;          shift = 3;  end
+               4'b1_010: begin corrector = ONE;                 shift = 3;  end
                4'b1_011: begin corrector = SQRT2;               shift = 2;  end
-               4'b1_100: begin corrector = APPROX_ONE;          shift = 3;  end
+               4'b1_100: begin corrector = ONE;                 shift = 3;  end
                4'b1_101: begin corrector = SQRT2;               shift = 2;  end
-               4'b1_110: begin corrector = APPROX_ONE;          shift = 3;  end
+               4'b1_110: begin corrector = ONE;                 shift = 3;  end
                4'b1_111: begin corrector = SQRT2;               shift = 2;  end              
            endcase
        end
